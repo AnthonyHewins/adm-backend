@@ -5,9 +5,19 @@ import (
 	"github.com/AnthonyHewins/adm/endpoints"
 )
 
-func main() {
+const (
+	POLYREG             = "/api/tools/poly-reg"
+	FEATURE_ENGINEERING = "/api/tools/feature-engineering"
+)
+
+func routerSetup() *gin.Engine {
 	r := gin.Default()
-	r.POST("/tools/poly-reg", tools.PolynomialRegression)
-	r.Run() // listen and serve on 0.0.0.0:8080
+	r.POST(POLYREG, tools.PolynomialRegression)
+	r.POST(FEATURE_ENGINEERING, tools.FeatureEngineering)
+	return r
 }
 
+func main() {
+	r := routerSetup()
+	r.Run()
+}
