@@ -3,7 +3,7 @@ package tools
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/AnthonyHewins/poly_regression"
+	"github.com/AnthonyHewins/polyfit"
 )
 
 type PolyRegData struct{
