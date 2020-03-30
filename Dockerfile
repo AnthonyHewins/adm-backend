@@ -1,6 +1,6 @@
+# Compile
 FROM golang:latest as go
 
-# Compile
 WORKDIR /app
 ADD . /app
 RUN go mod download
