@@ -1,3 +1,5 @@
+![build](https://github.com/AnthonyHewins/adm-backend/workflows/build/badge.svg?branch=master)
+
 ADM backend
 ===========
 
