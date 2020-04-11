@@ -1,4 +1,4 @@
-package tools
+package controllers
 
 const (
 	MAX_DEGREE = 5

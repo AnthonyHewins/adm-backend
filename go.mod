@@ -1,4 +1,4 @@
-module github.com/AnthonyHewins/adm
+module github.com/AnthonyHewins/adm-backend
 
 go 1.13
 
