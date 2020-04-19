@@ -1,0 +1,5 @@
+smtp:
+  email: "email@example.com"
+  password: "good password"
+  domain: "domain"
+  port: 443
