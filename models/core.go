@@ -18,7 +18,7 @@ type DB struct {
 var (
 	masterConfig string
 
-	EmailConfirmationLate = Error{s: "email confirmation expired; resent new confirmation"}
+	EmailConfirmationLate = Error{s: "email confirmation expired"}
 )
 
 type Error struct { s string }

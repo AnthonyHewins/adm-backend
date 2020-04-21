@@ -8,7 +8,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/gin-gonic/gin"
 	"github.com/AnthonyHewins/adm-backend/models"
 	"github.com/AnthonyHewins/adm-backend/controllers"
 	"github.com/AnthonyHewins/adm-backend/smtp"
@@ -17,32 +16,13 @@ import (
 const defaultConfigFile  = "./server-config.yml"
 
 type config struct {
-	AppName string    `yaml:"appName"`
-	BaseUrl string    `yaml:"baseUrl"`
-	Logger  bool      `yaml:"logger"`
+	AppName string             `yaml:"appName"`
+	BaseUrl string             `yaml:"baseUrl"`
+	Logger  bool               `yaml:"logger"`
 
-	Routes  Routes    `yaml:"routes"`
-	Smtp    smtp.Smtp `yaml:"smtp"`
-	DB	    models.DB `yaml:"db"`
-}
-
-type Routes struct {
-	Polyreg            string `yaml:"polyreg"`
-	FeatureEngineering string `yaml:"featureEngineering"`
-	Registration       string `yaml:"registration"`
-	AcctConfirmation   string `yaml:"acctConfirmation"`
-}
-
-func routerSetup(r *Routes) *gin.Engine {
-	router := gin.Default()
-
-	router.POST(r.Registration,       controllers.Register)
-	router.GET( r.AcctConfirmation,   controllers.AcctConfirmation)
-
-	router.POST(r.Polyreg,            controllers.PolynomialRegression)
-	router.POST(r.FeatureEngineering, controllers.FeatureEngineering)
-
-	return router
+	Routes  controllers.Routes `yaml:"routes"`
+	Smtp    smtp.Smtp          `yaml:"smtp"`
+	DB	    models.DB          `yaml:"db"`
 }
 
 func readConfig(file *string) config {
@@ -50,7 +30,9 @@ func readConfig(file *string) config {
 	if err != nil { log.Fatalln(err) }
 
 	var c config
-	if err := yaml.Unmarshal(fptr, &c); err != nil { log.Fatalln(err) }
+	if err := yaml.Unmarshal(fptr, &c); err != nil {
+		log.Fatalln(err)
+	}
 
 	return c
 }
@@ -92,7 +74,7 @@ func main() {
 	// 4. Bind server, and finally run it
 	//=======================================================================
 	log.Println("Binding routes...")
-	r := routerSetup(&c.Routes)
+	r := controllers.Router(&c.Routes)
 	log.Println("Routes binded. Server starting.")
 
 	r.Run()

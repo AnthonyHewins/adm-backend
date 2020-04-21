@@ -7,24 +7,26 @@ import (
 )
 
 // Must be within 15 minutes
-const confirmationTooLate = 15
+const confirmationThreshold = 15 * time.Minute
 
 type UserEmailConfirmation struct {
-	UserId int64        `gorm:"primary_key; auto_increment: false"`
-	Token  string       `gorm:"primary_key; auto_increment: false"`
+	UserID uint64
+	Token  string
 }
 
 func (uec *UserEmailConfirmation) ConfirmEmail(db *gorm.DB) error {
-	if uec.UserId <= 0 {
-		if err := db.Debug().Where("token = ?", uec.Token).First(&uec).Error; err != nil {
+	if uec.UserID <= 0 {
+		if err := db.Where("token = ?", uec.Token).First(&uec).Error; err != nil {
 			return err
 		}
 	}
 
-	u := User{ID: uec.UserId}
+	u := User{ID: uec.UserID}
 	if err := db.First(&u).Error; err != nil { return err }
 
-	if time.Now().Sub(u.RegisteredAt).Minutes() > confirmationTooLate {
+	minutesPassedSinceRegistration := time.Duration(time.Since(u.RegisteredAt).Minutes())
+
+	if minutesPassedSinceRegistration > confirmationThreshold {
 		return &EmailConfirmationLate
 	}
 

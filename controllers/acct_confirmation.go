@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/AnthonyHewins/adm-backend/models"
+	"github.com/AnthonyHewins/adm-backend/smtp"
 )
 
 func AcctConfirmation(c *gin.Context) {
@@ -17,33 +18,16 @@ func AcctConfirmation(c *gin.Context) {
 		return
 	}
 
-	uec := models.UserEmailConfirmation{Token: token}
-
-	db, err := models.Connect()
+	db := connectOrError(c)
+	if db == nil { return }
 	defer db.Close()
 
-	if err != nil {
-		c.JSON(500, gin.H{
-			"err": ERR_GENERAL,
-			"message": err.Error(),
-		})
-	}
-
-	tokenQuery := db.Where("token = ?", token).First(&uec)
-	if tokenQuery.RecordNotFound() {
-		c.JSON(404, gin.H{"message":"page not found"})
-		return
-	} else if tokenQuery.Error != nil {
-		c.JSON(500, gin.H{
-			"err": ERR_GENERAL,
-			"message": err.Error(),
-		})
-		return
-	}
+	uec := findConfirmation(c, db, token)
+	if uec == nil { return }
 
 	switch err := uec.ConfirmEmail(db); err {
 	case &models.EmailConfirmationLate:
-		sendNewConfirmationToken(uec.UserId, db, c)
+		sendNewConfirmationToken(uec.User.ID, db, c)
 	case nil:
 		c.JSON(200, gin.H{"message": "email confirmed, welcome"})
 	default:
@@ -54,12 +38,39 @@ func AcctConfirmation(c *gin.Context) {
 	}
 }
 
-func sendNewConfirmationToken(id int64, db *gorm.DB, c *gin.Context) {
+func findConfirmation(c *gin.Context, db *gorm.DB, token string) *models.UserEmailConfirmation {
+	uec := models.UserEmailConfirmation{}
+	tokenQuery := db.Where("token = ?", token).First(&uec)
+
+	if tokenQuery.RecordNotFound() {
+		c.JSON(404, gin.H{"message":"page not found"})
+		return nil
+	}
+
+	if tokenQuery.Error != nil {
+		c.JSON(500, gin.H{
+			"err": ERR_GENERAL,
+			"message": tokenQuery.Error.Error(),
+		})
+		return nil
+	}
+
+	return &uec
+}
+
+func sendNewConfirmationToken(id uint64, db *gorm.DB, c *gin.Context) {
 	u := models.User{ID: id}
 	db.First(&u)
-	err := u.RefreshConfirmationToken(db)
+	token, err := u.RefreshConfirmationToken(db)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"err": ERR_GENERAL,
+			"message": err.Error(),
+		})
+		return
+	}
 
-	if err == nil {
+	if err = smtp.AccountConfirmation(u.Email, token); err != nil {
 		c.JSON(422, gin.H{
 			"err": ERR_LATE,
 			"message": "confirmed email too late; another email has been sent",
