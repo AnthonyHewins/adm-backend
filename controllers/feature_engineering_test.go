@@ -7,7 +7,7 @@ import (
 
 
 func TestFeatureEngineering(t *testing.T) {
-	router := buildRouter()
+	_, router := buildRouterAndDB(t)
 
 	test := func(d *FeatureEngineeringData, eCode int, err string) {
 		resp, code := buildRequestFn(router, "POST", "/feature-engineering", d)

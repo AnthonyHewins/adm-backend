@@ -13,11 +13,7 @@ import (
 )
 
 func TestAcctConfirmation(t *testing.T) {
-	router := buildRouter()
-
-	models.DBSetupTest(nil) // nil => use default configuration
-	db, err := models.Connect()
-	if err != nil { t.Fatalf("test failed because test DB broke: %v", err) }
+	db, router := buildRouterAndDB(t)
 
 	// 404s should occur as a security measure
 	test404s(t, router)
@@ -37,31 +33,45 @@ func test404s(t *testing.T, router *gin.Engine) {
 }
 
 func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
-
-	test := func(path string, eCode int, err string)  {
+	test := func(path string, eCode int, err string) {
 		resp, code := buildRequestFn(router, "GET", path, nil)
 		assert.Equal(t, eCode, code)
-		assert.Equal(t, err, resp["error"])
+		assert.Equal(t, err,   resp["error"])
 	}
 
-	// registered 15 min late, the cutoff time
-	u := models.User{
-		Email: fmt.Sprintf("fake%v@gmail.com", time.Now()),
-		Password: "iasdjoaisd",
-		RegisteredAt: time.Now().Add(time.Hour),
-	}
+	// Setup: user is saved with
+	uec  := models.UserEmailConfirmation{}
+	u, _ := models.CreateUser(db, fmt.Sprintf("fake%v@gmail.com", time.Now().UnixNano()), "iasdjoaisd")
+	db.Save(&u)
 
-	if err := db.Create(&u).Error; err != nil { t.Fatal(err.Error()) }
-
-	uec := models.UserEmailConfirmation{UserID: u.ID}
-	if err := db.Model(uec).Related(&u).Error; err != nil { t.Fatal(err.Error()) }
-
+	// Try confirm with failure
+	models.ConfirmationThreshold = 0
+	db.Where("user_id = ?", u.ID).First(&uec)
 	test(url(uec.Token), 422, ERR_LATE)
 
-	// On time
-	u.RegisteredAt = time.Now()
-	db.Save(&u)
+	oldToken := uec.Token
+	db.Where("user_id = ?", u.ID).First(&uec)
+
+	if oldToken == uec.Token {
+		t.Errorf("token should be new but isn't: (old, new) => %v, %v", oldToken, uec.Token)
+	}
+
+
+
+	// Try confirm with success
+	models.ConfirmationThreshold = 15 * time.Minute
+	db.Where("user_id = ?", u.ID).First(&uec)
 	test(url(uec.Token), 200, "")
+	db.First(&u)
+
+	if u.ConfirmedAt == nil {
+		t.Errorf("user should have been confirmed but wasn't: %v", u)
+	}
+
+	shouldntBeFound := db.Where("user_id = ?", u.ID).First(&uec)
+	if !shouldntBeFound.RecordNotFound() {
+		t.Errorf("all tokens should have been deleted after confirmation but wasn't: %v", shouldntBeFound)
+	}
 }
 
 func url(token string) string {

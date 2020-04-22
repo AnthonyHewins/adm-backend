@@ -8,7 +8,7 @@ import (
 const polyreg = "/polyreg"
 
 func TestPolynomialRegression(t *testing.T) {
-	router := buildRouter()
+	_, router := buildRouterAndDB(t)
 
 	test := func(d *PolyRegData, eCode int, err string)  {
 		resp, code := buildRequestFn(router, "POST", "/polyreg", d)

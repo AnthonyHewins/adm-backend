@@ -16,8 +16,9 @@ type Routes struct {
 
 const (
 	// Register errors
-	ERR_EMAIL = "email"
-	ERR_LATE  = "late"
+	ERR_EMAIL    = "email"
+	ERR_PASSWORD = "password"
+	ERR_LATE     = "late"
 
 	// Tools constants
 	MAX_DEGREE   = 5

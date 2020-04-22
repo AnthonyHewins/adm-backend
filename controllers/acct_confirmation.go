@@ -27,12 +27,12 @@ func AcctConfirmation(c *gin.Context) {
 
 	switch err := uec.ConfirmEmail(db); err {
 	case &models.EmailConfirmationLate:
-		sendNewConfirmationToken(uec.User.ID, db, c)
+		sendNewConfirmationToken(uec.UserID, db, c)
 	case nil:
 		c.JSON(200, gin.H{"message": "email confirmed, welcome"})
 	default:
 		c.JSON(500, gin.H{
-			"err": ERR_GENERAL,
+			"error": ERR_GENERAL,
 			"message": err.Error(),
 		})
 	}
@@ -49,7 +49,7 @@ func findConfirmation(c *gin.Context, db *gorm.DB, token string) *models.UserEma
 
 	if tokenQuery.Error != nil {
 		c.JSON(500, gin.H{
-			"err": ERR_GENERAL,
+			"error": ERR_GENERAL,
 			"message": tokenQuery.Error.Error(),
 		})
 		return nil
@@ -64,7 +64,7 @@ func sendNewConfirmationToken(id uint64, db *gorm.DB, c *gin.Context) {
 	token, err := u.RefreshConfirmationToken(db)
 	if err != nil {
 		c.JSON(500, gin.H{
-			"err": ERR_GENERAL,
+			"error": ERR_GENERAL,
 			"message": err.Error(),
 		})
 		return
@@ -72,12 +72,12 @@ func sendNewConfirmationToken(id uint64, db *gorm.DB, c *gin.Context) {
 
 	if err = smtp.AccountConfirmation(u.Email, token); err != nil {
 		c.JSON(422, gin.H{
-			"err": ERR_LATE,
+			"error": ERR_LATE,
 			"message": "confirmed email too late; another email has been sent",
 		})
 	} else {
 		c.JSON(500, gin.H{
-			"err": ERR_LATE,
+			"error": ERR_LATE,
 			"message": fmt.Sprintf(
 				"confirmed email too late; tried sending another email but failed: %v",
 				err.Error(),

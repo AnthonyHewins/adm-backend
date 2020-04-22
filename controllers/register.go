@@ -27,6 +27,11 @@ func Register(c *gin.Context) {
 			"error": ERR_EMAIL,
 			"message": err.Error(),
 		})
+	case models.PasswordTooSimple:
+		c.JSON(422, gin.H{
+			"error": ERR_PASSWORD,
+			"message": err.Error(),
+		})
 	case nil:
 		c.JSON(200, gin.H{
 			"message": "email registered; please confirm it with the email that was sent to your address.",

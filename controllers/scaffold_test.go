@@ -2,11 +2,15 @@ package controllers
 
 import (
 	"bytes"
+	"testing"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/jinzhu/gorm"
 	"github.com/gin-gonic/gin"
+
+	"github.com/AnthonyHewins/adm-backend/models"
 )
 
 const (
@@ -16,8 +20,20 @@ const (
 	testConfirmation = "/confirmation"
 )
 
-func buildRouter() *gin.Engine {
-	return Router(&Routes{
+func buildRouterAndDB(t *testing.T) (*gorm.DB, *gin.Engine) {
+	models.DBSetup(&models.DB{
+		Host:     "localhost",
+		Port:     5432,
+		Name:     "admtest",
+		User:     "test",
+		Password: "test",
+	})
+
+	db, err := models.Connect()
+
+	if err != nil { t.Fatalf("db opening failed: %v", err) }
+
+	return db, Router(&Routes{
 		Polyreg: testPolyreg,
 		FeatureEngineering: testFeatureEngineering,
 		Registration: testRegistration,

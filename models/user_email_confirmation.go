@@ -7,7 +7,7 @@ import (
 )
 
 // Must be within 15 minutes
-const confirmationThreshold = 15 * time.Minute
+var ConfirmationThreshold = 15 * time.Minute
 
 type UserEmailConfirmation struct {
 	UserID uint64
@@ -26,7 +26,7 @@ func (uec *UserEmailConfirmation) ConfirmEmail(db *gorm.DB) error {
 
 	minutesPassedSinceRegistration := time.Duration(time.Since(u.RegisteredAt).Minutes())
 
-	if minutesPassedSinceRegistration > confirmationThreshold {
+	if minutesPassedSinceRegistration > ConfirmationThreshold {
 		return &EmailConfirmationLate
 	}
 
