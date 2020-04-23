@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/jinzhu/gorm"
+
+	"github.com/AnthonyHewins/adm-backend/smtp"
 )
 
 const (
@@ -42,8 +44,6 @@ func CreateUser(db *gorm.DB, email, password string) (*User, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 	if err != nil { return nil, err }
 
-	// do this immediately; plaintext should be in memory as short as possible
-	// this will help push the go runtime to drop pw
 	password = string(hash)
 	u := User{ Email: email, Password: password }
 
@@ -58,7 +58,10 @@ func CreateUser(db *gorm.DB, email, password string) (*User, error) {
 		err := t.Create(&u).Error
 		if err != nil { return err }
 
-		return t.Create(&UserEmailConfirmation{ UserID: u.ID, Token: token }).Error
+		err = t.Create(&UserEmailConfirmation{ UserID: u.ID, Token: token }).Error
+		if err != nil { return err }
+
+		return smtp.AccountConfirmation(email, token)
 	})
 }
 

@@ -2,6 +2,7 @@ package smtp
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/matcornic/hermes/v2"
 	"gopkg.in/gomail.v2"
@@ -24,6 +25,11 @@ func TokenRefresh(email, token string) error {
 }
 
 func transactional(email, token, instructions string) error {
+	if !smtpMasterConfig.smtpSettings.Send {
+		log.Println("Sending is OFF; faked an email send.")
+		return nil
+	}
+
 	link := fmt.Sprintf(
 		"%v%v?token=%v",
 		smtpMasterConfig.baseUrl,

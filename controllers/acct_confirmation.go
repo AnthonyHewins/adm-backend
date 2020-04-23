@@ -70,7 +70,7 @@ func sendNewConfirmationToken(id uint64, db *gorm.DB, c *gin.Context) {
 		return
 	}
 
-	if err = smtp.AccountConfirmation(u.Email, token); err != nil {
+	if err = smtp.TokenRefresh(u.Email, token); err == nil {
 		c.JSON(422, gin.H{
 			"error": ERR_LATE,
 			"message": "confirmed email too late; another email has been sent",

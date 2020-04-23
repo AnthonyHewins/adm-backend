@@ -57,7 +57,6 @@ func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
 	}
 
 
-
 	// Try confirm with success
 	models.ConfirmationThreshold = 15 * time.Minute
 	db.Where("user_id = ?", u.ID).First(&uec)

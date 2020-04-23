@@ -13,6 +13,7 @@ type masterConfig struct {
 	confirmationEndpoint string
 
 	theme                hermes.Hermes
+	send                 bool
 }
 
 type Smtp struct {
@@ -20,6 +21,8 @@ type Smtp struct {
 	Password string `yaml:"password"`
 	Domain   string `yaml:"domain"`
 	Port     int    `yaml:"port"`
+
+	Send     bool   `yaml:"send"`
 }
 
 func EmailSetup(smtpSettings *Smtp, appName, baseUrl, confirmationEndpoint string) {
