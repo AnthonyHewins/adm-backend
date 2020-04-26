@@ -26,9 +26,17 @@ func TestRegister(t *testing.T) {
 	// invalid password (fails validation in length)
 	test(422, ERR_PASSWORD, &registrationForm{Email: "sdf@jsaiod.com", Password: "sadhj"})
 
+	now := time.Now().UnixNano()
+
 	// valid
 	test(200, "", &registrationForm{
-		Email: fmt.Sprintf("sd%vf@jsaiod.com",time.Now().UnixNano()),
+		Email: fmt.Sprintf("sd%vf@jsaiod.com", now),
+		Password: "sasdasdhj",
+	})
+
+	// already taken
+	test(422, ERR_ALREADY_EXISTS, &registrationForm{
+		Email: fmt.Sprintf("sd%vf@jsaiod.com", now),
 		Password: "sasdasdhj",
 	})
 }

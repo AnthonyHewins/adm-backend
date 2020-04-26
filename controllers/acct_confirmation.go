@@ -43,7 +43,7 @@ func findConfirmation(c *gin.Context, db *gorm.DB, token string) *models.UserEma
 	tokenQuery := db.Where("token = ?", token).First(&uec)
 
 	if tokenQuery.RecordNotFound() {
-		c.JSON(404, gin.H{"message":"page not found"})
+		c.String(404, "page not found")
 		return nil
 	}
 

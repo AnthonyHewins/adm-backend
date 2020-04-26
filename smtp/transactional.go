@@ -33,7 +33,7 @@ func transactional(email, token, instructions string) error {
 	link := fmt.Sprintf(
 		"%v%v?token=%v",
 		smtpMasterConfig.baseUrl,
-		smtpMasterConfig.confirmationEndpoint,
+		smtpMasterConfig.smtpSettings.ConfirmationUrl,
 		token,
 	)
 

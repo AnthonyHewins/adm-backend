@@ -13,16 +13,18 @@ import (
 	"github.com/AnthonyHewins/adm-backend/smtp"
 )
 
-const defaultConfigFile  = "./server-config.yml"
+const defaultConfigFile = "./server-config.yml"
 
 type config struct {
-	AppName string             `yaml:"appName"`
-	BaseUrl string             `yaml:"baseUrl"`
-	Logger  bool               `yaml:"logger"`
+	AppName string               `yaml:"appName"`
+	BaseUrl string               `yaml:"baseUrl"`
 
-	Routes  controllers.Routes `yaml:"routes"`
-	Smtp    smtp.Smtp          `yaml:"smtp"`
-	DB	    models.DB          `yaml:"db"`
+	Routes struct {
+		RoutesV1 controllers.Routes `yaml:"v1"`
+	} `yaml:"routes"`
+
+	Smtp    smtp.Smtp            `yaml:"smtp"`
+	DB	    models.DB            `yaml:"db"`
 }
 
 func readConfig(file *string) config {
@@ -53,7 +55,7 @@ func main() {
 	// 2. Email setup
 	//=======================================================================
 	log.Println("Setting up email settings...")
-	smtp.EmailSetup(&c.Smtp, c.AppName, c.BaseUrl, c.Routes.AcctConfirmation)
+	smtp.EmailSetup(&c.Smtp, c.AppName, c.BaseUrl)
 	log.Println("Email set up.")
 	log.Printf("Sending emails from user '%v', domain '%v:%v'\n", c.Smtp.Email, c.Smtp.Domain, c.Smtp.Port)
 
@@ -74,8 +76,13 @@ func main() {
 	// 4. Bind server, and finally run it
 	//=======================================================================
 	log.Println("Binding routes...")
-	r := controllers.Router(&c.Routes)
-	log.Println("Routes binded. Server starting.")
+
+	groups := []controllers.Routes{
+		c.Routes.RoutesV1,
+	}
+
+	r := controllers.Router(groups)
+	log.Println("Server starting.")
 
 	r.Run()
 }

@@ -34,10 +34,15 @@ func buildRouterAndDB(t *testing.T) (*gorm.DB, *gin.Engine) {
 	if err != nil { t.Fatalf("db opening failed: %v", err) }
 
 	return db, Router(&Routes{
-		Polyreg: testPolyreg,
-		FeatureEngineering: testFeatureEngineering,
-		Registration: testRegistration,
-		AcctConfirmation: testConfirmation,
+		Groups: []routeGroup{
+			routeGroup{
+				Base: "",
+				Polyreg: testPolyreg,
+				FeatureEngineering: testFeatureEngineering,
+				Registration: testRegistration,
+				AcctConfirmation: testConfirmation,
+			},
+		},
 	})
 }
 
