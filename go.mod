@@ -5,7 +5,9 @@ go 1.13
 require (
 	github.com/AnthonyHewins/feature-scaling v0.0.0-20200319004241-efb05c2ee10c
 	github.com/AnthonyHewins/polyfit v0.0.0-20200328032501-7d5d8fff7270
+	github.com/appleboy/gin-jwt/v2 v2.6.3
 	github.com/cweill/gotests v1.5.3 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/gomodifytags v1.4.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/gin-gonic/gin v1.6.2
@@ -14,11 +16,14 @@ require (
 	github.com/go-pg/pg/v9 v9.1.6
 	github.com/golang-migrate/migrate v3.5.4+incompatible // indirect
 	github.com/golang-migrate/migrate/v4 v4.10.0 // indirect
+	github.com/gorilla/context v1.1.1
+	github.com/gorilla/mux v1.7.4
 	github.com/jinzhu/gorm v1.9.12
 	github.com/jordan-wright/email v0.0.0-20200322182553-8eef2508c362
 	github.com/matcornic/hermes/v2 v2.1.0
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
+	github.com/mitchellh/mapstructure v1.3.0
 	github.com/motemen/go-quickfix v0.0.0-20200118031250-2a6e54e79a50 // indirect
 	github.com/motemen/gore v0.5.0 // indirect
 	github.com/peterh/liner v1.2.0 // indirect

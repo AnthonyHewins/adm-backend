@@ -1,18 +1,28 @@
 package controllers
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/jinzhu/gorm"
 	"github.com/gin-gonic/gin"
+	"github.com/appleboy/gin-jwt/v2"
 
 	"github.com/AnthonyHewins/adm-backend/models"
 )
 
 type Routes struct {
+	// Base URL
 	Base               string `yaml:"base"`
+
+	// Unsecured endpoints
 	Polyreg            string `yaml:"polyreg"`
 	FeatureEngineering string `yaml:"featureEngineering"`
 	Registration       string `yaml:"registration"`
 	AcctConfirmation   string `yaml:"acctConfirmation"`
+
+	// Secure endpoints
+	DcfValuation    string `yaml:"tickerValuation"`
 }
 
 const (
@@ -21,6 +31,9 @@ const (
 	ERR_ALREADY_EXISTS = "email-exists"
 	ERR_PASSWORD       = "password"
 	ERR_LATE           = "late"
+
+	// Authentication/authorization
+	ERR_UNAUTHORIZED   = "unauthorized"
 
 	// Tools constants
 	MAX_DEGREE   = 5
@@ -35,20 +48,40 @@ const (
 	ERR_GENERAL         = "server"
 )
 
-func Router(r []Routes) *gin.Engine {
+func Router(r Routes, privkey, pubkey string) *gin.Engine {
 	router := gin.Default()
 
-	// Group routes together via some API base; e.g. /api/v1
-	for _, group := range r {
-		g := router.Group(group.Base)
-		{
-			g.POST(group.Registration,       Register)
-			g.GET( group.AcctConfirmation,   AcctConfirmation)
+	jwtMiddleware := genAuthMiddleware(privkey, pubkey)
 
-			g.POST(group.Polyreg,            PolynomialRegression)
-			g.POST(group.FeatureEngineering, FeatureEngineering)
-		}
+	// Open endpoints
+	unsecured := router.Group(r.Base)
+	{
+		// New accts
+		unsecured.POST(r.Registration,       Register)
+		unsecured.GET( r.AcctConfirmation,   AcctConfirmation)
+
+		// Tools
+		unsecured.POST(r.Polyreg,            PolynomialRegression)
+		unsecured.POST(r.FeatureEngineering, FeatureEngineering)
 	}
+
+	// Auth
+	auth := router.Group( fmt.Sprintf("%v%v", r.Base, "/auth") )
+	{
+		// Unprotected
+		auth.POST("/login", jwtMiddleware.LoginHandler)
+		auth.GET( "/refresh_token", jwtMiddleware.RefreshHandler)
+
+		// Begin protected
+		auth.Use(jwtMiddleware.MiddlewareFunc())
+		auth.GET(r.DcfValuation, DcfValuation)
+	}
+
+	router.NoRoute(jwtMiddleware.MiddlewareFunc(), func(c *gin.Context) {
+		claims := jwt.ExtractClaims(c)
+		log.Printf("NoRoute claims: %#v\n", claims)
+		c.String(404, "Page not found")
+	})
 
 	return router
 }

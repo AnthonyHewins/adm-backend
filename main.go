@@ -16,12 +16,12 @@ import (
 const defaultConfigFile = "./server-config.yml"
 
 type config struct {
-	AppName string               `yaml:"appName"`
-	BaseUrl string               `yaml:"baseUrl"`
+	AppName string `yaml:"appName"`
+	BaseUrl string `yaml:"baseUrl"`
+	Privkey string `yaml:"privkey"`
+	Pubkey  string `yaml:"pubkey"`
 
-	Routes struct {
-		RoutesV1 controllers.Routes `yaml:"v1"`
-	} `yaml:"routes"`
+	RoutesV1 controllers.Routes `yaml:"v1"`
 
 	Smtp    smtp.Smtp            `yaml:"smtp"`
 	DB	    models.DB            `yaml:"db"`
@@ -77,11 +77,8 @@ func main() {
 	//=======================================================================
 	log.Println("Binding routes...")
 
-	groups := []controllers.Routes{
-		c.Routes.RoutesV1,
-	}
+	r := controllers.Router(c.RoutesV1, c.Privkey, c.Pubkey)
 
-	r := controllers.Router(groups)
 	log.Println("Server starting.")
 
 	r.Run()
