@@ -2,11 +2,9 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/jinzhu/gorm"
 	"github.com/gin-gonic/gin"
-	"github.com/appleboy/gin-jwt/v2"
 
 	"github.com/AnthonyHewins/adm-backend/models"
 )
@@ -20,6 +18,7 @@ type Routes struct {
 	FeatureEngineering string `yaml:"featureEngineering"`
 	Registration       string `yaml:"registration"`
 	AcctConfirmation   string `yaml:"acctConfirmation"`
+	PasswordReset      string `yaml:"passwordReset"`
 
 	// Secure endpoints
 	DcfValuation    string `yaml:"tickerValuation"`
@@ -53,12 +52,16 @@ func Router(r Routes, privkey, pubkey string) *gin.Engine {
 
 	jwtMiddleware := genAuthMiddleware(privkey, pubkey)
 
+
 	// Open endpoints
 	unsecured := router.Group(r.Base)
 	{
 		// New accts
 		unsecured.POST(r.Registration,       Register)
 		unsecured.GET( r.AcctConfirmation,   AcctConfirmation)
+
+		// Other acct stuff
+		unsecured.POST(r.PasswordReset,      PasswordReset)
 
 		// Tools
 		unsecured.POST(r.Polyreg,            PolynomialRegression)
@@ -69,19 +72,13 @@ func Router(r Routes, privkey, pubkey string) *gin.Engine {
 	auth := router.Group( fmt.Sprintf("%v%v", r.Base, "/auth") )
 	{
 		// Unprotected
-		auth.POST("/login", jwtMiddleware.LoginHandler)
+		auth.POST("/login",         jwtMiddleware.LoginHandler)
 		auth.GET( "/refresh_token", jwtMiddleware.RefreshHandler)
 
 		// Begin protected
 		auth.Use(jwtMiddleware.MiddlewareFunc())
 		auth.GET(r.DcfValuation, DcfValuation)
 	}
-
-	router.NoRoute(jwtMiddleware.MiddlewareFunc(), func(c *gin.Context) {
-		claims := jwt.ExtractClaims(c)
-		log.Printf("NoRoute claims: %#v\n", claims)
-		c.String(404, "Page not found")
-	})
 
 	return router
 }

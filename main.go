@@ -21,7 +21,9 @@ type config struct {
 	Privkey string `yaml:"privkey"`
 	Pubkey  string `yaml:"pubkey"`
 
-	RoutesV1 controllers.Routes `yaml:"v1"`
+	Routes struct {
+		V1 controllers.Routes `yaml:"v1"`
+	} `yaml:"routes"`
 
 	Smtp    smtp.Smtp            `yaml:"smtp"`
 	DB	    models.DB            `yaml:"db"`
@@ -77,7 +79,7 @@ func main() {
 	//=======================================================================
 	log.Println("Binding routes...")
 
-	r := controllers.Router(c.RoutesV1, c.Privkey, c.Pubkey)
+	r := controllers.Router(c.Routes.V1, c.Privkey, c.Pubkey)
 
 	log.Println("Server starting.")
 

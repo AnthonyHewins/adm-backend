@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 	"regexp"
-	"math/rand"
-	"encoding/base64"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -82,19 +80,4 @@ func (u *User) RefreshConfirmationToken(db *gorm.DB) (string, error) {
 func isPasswordValid(s string) bool {
 	// this will grow in the future
 	return len(s) >= passwordLength
-}
-
-func base64ConfirmationString() (string, error) {
-	// More random in the future?
-	// 1. csprng
-	// 2. Add PID
-	// 3. Salt with username/email
-	rand.Seed(time.Now().UnixNano())
-
-	// Atrociously bad algo ATM, but good for now;
-	// improve the speed and wasted computations later
-	b := make([]byte, 40, 40)
-	if _, err := rand.Read(b); err != nil { return "", err }
-
-	return base64.URLEncoding.EncodeToString(b)[:40], nil
 }
