@@ -135,7 +135,7 @@ func TestAuthenticate(t *testing.T) {
 	assert.Equal(t, nil, u.Authenticate(db))
 }
 
-func TestResetPassword(t *testing.T) {
+func TestUserResetPassword(t *testing.T) {
 	db := getDB(t)
 
 	tooShort := "sadd"

@@ -149,3 +149,9 @@ func isPasswordValid(s string) bool {
 	// this will grow in the future
 	return len(s) >= passwordLength
 }
+
+func userTokenExpiryCheck(t time.Time) bool {
+	minutesPassedSinceRegistration := time.Duration(time.Since(t).Minutes())
+
+	return minutesPassedSinceRegistration > TokenTimeoutThreshold
+}

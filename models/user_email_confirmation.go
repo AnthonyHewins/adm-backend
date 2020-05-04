@@ -7,7 +7,7 @@ import (
 )
 
 // Must be within 15 minutes
-var ConfirmationThreshold = 15 * time.Minute
+var TokenTimeoutThreshold = 15 * time.Minute
 
 type UserEmailConfirmation struct {
 	UserID uint64
@@ -24,10 +24,8 @@ func (uec *UserEmailConfirmation) ConfirmEmail(db *gorm.DB) error {
 	u := User{ID: uec.UserID}
 	if err := db.First(&u).Error; err != nil { return err }
 
-	minutesPassedSinceRegistration := time.Duration(time.Since(u.RegisteredAt).Minutes())
-
-	if minutesPassedSinceRegistration > ConfirmationThreshold {
-		return &EmailConfirmationLate
+	if userTokenExpiryCheck(u.RegisteredAt) {
+		return TokenTimeout
 	}
 
 	// DB trigger deletes (all) the UserEmailConfirmation(s) for this user upon this update happening

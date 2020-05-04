@@ -21,7 +21,7 @@ type DB struct {
 var (
 	masterConfig string
 
-	EmailConfirmationLate = Error{s: "email confirmation expired"}
+	TokenTimeout = &Error{s: "token has expired; you will need a new one to proceed with this action"}
 )
 
 type Error struct { s string }

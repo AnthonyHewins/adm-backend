@@ -26,7 +26,7 @@ func AcctConfirmation(c *gin.Context) {
 	if uec == nil { return }
 
 	switch err := uec.ConfirmEmail(db); err {
-	case &models.EmailConfirmationLate:
+	case models.TokenTimeout:
 		sendNewConfirmationToken(uec.UserID, db, c)
 	case nil:
 		c.JSON(200, gin.H{"message": "email confirmed, welcome"})

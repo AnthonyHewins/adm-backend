@@ -44,8 +44,10 @@ func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
 	u := models.User{Email: fmt.Sprintf("fake%v@gmail.com", time.Now().UnixNano()), Password: "iasdjoaisd"}
 	u.Create(db)
 
+	oldTimeoutValue := models.TokenTimeoutThreshold
+
 	// Try confirm with failure
-	models.ConfirmationThreshold = 0
+	models.TokenTimeoutThreshold = 0
 	db.Where("user_id = ?", u.ID).First(&uec)
 	test(url(uec.Token), 422, ERR_LATE)
 
@@ -58,7 +60,7 @@ func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
 
 
 	// Try confirm with success
-	models.ConfirmationThreshold = 15 * time.Minute
+	models.TokenTimeoutThreshold = oldTimeoutValue
 	db.Where("user_id = ?", u.ID).First(&uec)
 	test(url(uec.Token), 200, "")
 	db.First(&u)

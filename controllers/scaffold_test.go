@@ -20,6 +20,8 @@ var (
 	testConfirmation       = "/confirmation"
 	testTicker             = "/ticker"
 	testLogin              = "/auth/login"
+	testPwReset            = "/pw-reset"
+	testConfirmPwReset     = "/confirm-pw-reset"
 
 	testRsaPrivkey = "../fixtures/testkey"
 	testRsaPubkey  = "../fixtures/testkey.pub"
@@ -52,6 +54,8 @@ func buildRouter() *gin.Engine {
 			Registration:       testRegistration,
 			AcctConfirmation:   testConfirmation,
 			DcfValuation:       testTicker,
+			ConfirmPwReset:     testConfirmPwReset,
+			PasswordReset: testPwReset,
 		},
 		testRsaPrivkey,
 		testRsaPubkey,

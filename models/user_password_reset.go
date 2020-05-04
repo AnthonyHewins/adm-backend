@@ -27,6 +27,8 @@ func (upr *UserPasswordReset) CreateResetPasswordToken(db *gorm.DB) error {
 	u := User{ID: upr.UserID}
 	if err := db.First(&u).Error; err != nil { return err }
 
+	upr.Token = token
+
 	return db.Transaction(func(tx *gorm.DB) error {
 		err = tx.Exec(upsertQuery, upr.UserID, token, token).Error
 
@@ -34,4 +36,22 @@ func (upr *UserPasswordReset) CreateResetPasswordToken(db *gorm.DB) error {
 
 		return smtp.PasswordReset(u.Email, token)
 	})
+}
+
+func (upr *UserPasswordReset) ResetPassword(db *gorm.DB, newPw string) error {
+	var err error
+	if upr.UserID == 0 {
+		err = db.Where("token = ?", upr.Token).First(&upr).Error
+	} else {
+		err = db.Where("user_id = ?", upr.UserID).First(&upr).Error
+	}
+
+	if err != nil { return err }
+
+	if userTokenExpiryCheck(upr.ResetAt) {
+		return TokenTimeout
+	}
+
+	u := User{ID: upr.UserID, Password: newPw}
+	return u.ResetPassword(db)
 }

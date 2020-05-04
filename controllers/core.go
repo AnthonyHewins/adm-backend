@@ -19,6 +19,7 @@ type Routes struct {
 	Registration       string `yaml:"registration"`
 	AcctConfirmation   string `yaml:"acctConfirmation"`
 	PasswordReset      string `yaml:"passwordReset"`
+	ConfirmPwReset     string `yaml:"confirmPasswordReset"`
 
 	// Secure endpoints
 	DcfValuation    string `yaml:"tickerValuation"`
@@ -33,6 +34,8 @@ const (
 
 	// Authentication/authorization
 	ERR_UNAUTHORIZED   = "unauthorized"
+
+	ERR_404 = "doesnt-exist"
 
 	// Tools constants
 	MAX_DEGREE   = 5
@@ -61,7 +64,8 @@ func Router(r Routes, privkey, pubkey string) *gin.Engine {
 		unsecured.GET( r.AcctConfirmation,   AcctConfirmation)
 
 		// Other acct stuff
-		unsecured.POST(r.PasswordReset,      PasswordReset)
+		unsecured.POST(r.PasswordReset,  PasswordReset)
+		unsecured.POST(r.ConfirmPwReset, ConfirmPwReset)
 
 		// Tools
 		unsecured.POST(r.Polyreg,            PolynomialRegression)
