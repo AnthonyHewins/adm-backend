@@ -16,7 +16,8 @@ func TestUnauthorizedHandler(t *testing.T) {
 	// Test no token is all that's needed; the library should handle the rest.
 	// We just need to see that the response is 401 (since no auth was provided),
 	// and that it has ERR_UNAUTHORIZED.
-	resp, code := buildRequestFn(router, "GET", testTicker, nil)
+	tickerRoute := fmt.Sprintf("/auth%v", testTicker)
+	resp, code := buildRequestFn(router, "GET", tickerRoute, nil)
 	assert.Equal(t, 401, code)
 	assert.Equal(t, ERR_UNAUTHORIZED, resp["error"])
 }
@@ -28,30 +29,32 @@ func TestAuthenticate(t *testing.T) {
 		resp, code := buildRequestFn(router, "POST", testLogin, body)
 		assert.Equal(t, c, code)
 		assert.Equal(t, error, resp["error"])
-		if message != "" {
-			assert.Equal(t, message, resp["message"])
-		}
+		assert.Equal(t, message, resp["message"])
 	}
 
 	// Missing login values -> unauthorized
 	test(401, ERR_UNAUTHORIZED, jwt.ErrMissingLoginValues.Error(), nil)
 
 	// Nonexisting user -> unauthorized
-	test(401, ERR_UNAUTHORIZED, jwt.ErrFailedAuthentication.Error(), &login{Email: "1", Password: "uiodsjdsg"})
+	test(401, ERR_UNAUTHORIZED, jwt.ErrFailedAuthentication.Error(), &credentials{Email: "1", Password: "uiodsjdsg"})
 
-	// User exists, pw correct, but not confirmed -> unauthorized
+	// User exists, pw correct, but not confirmed -> unauthorized, but proper err message
 	pw := "ihjfoiurdes"
-	u, _ := models.CreateUser(db, fmt.Sprintf("ij%v@dfk.com", time.Now().UnixNano()), pw)
-	login := login{ Email: u.Email, Password: pw }
-	test(401, ERR_UNAUTHORIZED, "you have not confirmed your email yet; please confirm it to log in", &login)
+	u := models.User{ Email: fmt.Sprintf("ij%v@dfk.com", time.Now().UnixNano()), Password: pw}
+	u.Create(db)
+
+	login := credentials{ Email: u.Email, Password: pw }
+	test(401, ERR_UNAUTHORIZED, models.EmailNotConfirmed.Error(), &login)
 
 	// User email confirmed, but password doesn't match -> unauthorized
-	uec := models.UserEmailConfirmation{}
-	db.Where("user_id = ?", u.ID).First(&uec)
-	uec.ConfirmEmail(db)
+	uec := models.UserEmailConfirmation{UserID: u.ID}
+	err := uec.ConfirmEmail(db)
+	if err != nil { t.Fatalf("%v", err) }
+
+	db.First(&u)
 
 	login.Password = "111"
-	test(401, ERR_UNAUTHORIZED, "", &login)
+	test(401, ERR_UNAUTHORIZED, jwt.ErrFailedAuthentication.Error(), &login)
 
 	// User email confirmed, PW matches -> successful login
 	login.Password = pw
@@ -59,7 +62,7 @@ func TestAuthenticate(t *testing.T) {
 }
 
 /*
-TODO may be used in the future, more likely than not
+TODO used in the future
 
 func TestAuthorizator(t *testing.T) {
 

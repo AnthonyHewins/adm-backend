@@ -41,8 +41,8 @@ func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
 
 	// Setup: user is saved with
 	uec  := models.UserEmailConfirmation{}
-	u, _ := models.CreateUser(db, fmt.Sprintf("fake%v@gmail.com", time.Now().UnixNano()), "iasdjoaisd")
-	db.Save(&u)
+	u := models.User{Email: fmt.Sprintf("fake%v@gmail.com", time.Now().UnixNano()), Password: "iasdjoaisd"}
+	u.Create(db)
 
 	// Try confirm with failure
 	models.ConfirmationThreshold = 0

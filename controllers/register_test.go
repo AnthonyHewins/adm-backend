@@ -21,21 +21,21 @@ func TestRegister(t *testing.T) {
 	test(400, ERR_PARAM, nil)
 
 	// invalid email (fails validation)
-	test(422, ERR_EMAIL, &registrationForm{Email: "sdf", Password: "sndfiush923"})
+	test(422, ERR_EMAIL, &credentials{Email: "sdf", Password: "sndfiush923"})
 
 	// invalid password (fails validation in length)
-	test(422, ERR_PASSWORD, &registrationForm{Email: "sdf@jsaiod.com", Password: "sadhj"})
+	test(422, ERR_PASSWORD, &credentials{Email: "sdf@jsaiod.com", Password: "sadhj"})
 
 	now := time.Now().UnixNano()
 
 	// valid
-	test(200, "", &registrationForm{
+	test(200, "", &credentials{
 		Email: fmt.Sprintf("sd%vf@jsaiod.com", now),
 		Password: "sasdasdhj",
 	})
 
 	// already taken
-	test(422, ERR_ALREADY_EXISTS, &registrationForm{
+	test(422, ERR_ALREADY_EXISTS, &credentials{
 		Email: fmt.Sprintf("sd%vf@jsaiod.com", now),
 		Password: "sasdasdhj",
 	})

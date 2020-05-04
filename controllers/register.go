@@ -12,20 +12,16 @@ var (
 	uniquenessViolation = regexp.MustCompile("duplicate key value violates unique constraint")
 )
 
-type registrationForm struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func Register(c *gin.Context) {
-	var form registrationForm
+	var form credentials
 
 	if !forceBind(c, &form) { return }
 
 	db := connectOrError(c)
 	if db == nil { return }
 
-	_, err := models.CreateUser(db, form.Email, form.Password)
+	u := form.toUser()
+	err := u.Create(db)
 	db.Close()
 
 	switch err {

@@ -1,11 +1,8 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
@@ -14,11 +11,6 @@ import (
 )
 
 var identityKey = "id"
-
-type login struct {
-	Email    string `json:"email"    binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
 
 func genAuthMiddleware(privkey, pubkey string) *jwt.GinJWTMiddleware {
 	log.Printf("Bootstrapping JWT encryption with privkey '%v' and pubkey '%v'\n", privkey, pubkey)
@@ -52,35 +44,24 @@ func unauthorizedHandler(c *gin.Context, code int, message string) {
 }
 
 func authenticate(c *gin.Context) (interface{}, error) {
-	var loginVals login
+	var loginVals credentials
 	if err := c.ShouldBind(&loginVals); err != nil {
-		return "", jwt.ErrMissingLoginValues
+		return nil, jwt.ErrMissingLoginValues
 	}
 
 	db, err := models.Connect()
-	if err != nil { return "", err }
+	if err != nil { return nil, err }
 
-	user := models.User{}
-	if db.Where("email = ?", loginVals.Email).First(&user).RecordNotFound() {
-		return nil, jwt.ErrFailedAuthentication
-	}
-
-	if user.ConfirmedAt == nil {
-		return nil, fmt.Errorf("you have not confirmed your email yet; please confirm it to log in")
-	}
-
-	err = bcrypt.CompareHashAndPassword(
-		[]byte(user.Password),
-		[]byte(loginVals.Password),
-	)
+	user := models.User{Email: loginVals.Email, Password: loginVals.Password}
+	err = user.Authenticate(db)
 
 	switch err {
-	case bcrypt.ErrMismatchedHashAndPassword:
-		return nil, jwt.ErrFailedAuthentication
+	case models.EmailNotConfirmed:
+		return nil, err
 	case nil:
 		return gin.H{identityKey: user.ID}, nil
 	default:
-		return nil, err
+		return nil, jwt.ErrFailedAuthentication
 	}
 }
 

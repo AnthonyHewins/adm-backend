@@ -8,7 +8,11 @@ import (
 )
 
 // Hacky way of upserting due to gorm's lack of upsert at the moment
-const upsertQuery = "INSERT INTO user_password_resets (user_id, token, reset_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (user_id) DO UPDATE SET token = ?, reset_at = CURRENT_TIMESTAMP"
+const upsertQuery = `
+INSERT INTO user_password_resets (user_id, token, reset_at)
+VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (user_id)
+DO UPDATE SET token = ?, reset_at = CURRENT_TIMESTAMP
+`
 
 type UserPasswordReset struct {
 	UserID     uint64
@@ -24,7 +28,7 @@ func (upr *UserPasswordReset) CreateResetPasswordToken(db *gorm.DB) error {
 	if err := db.First(&u).Error; err != nil { return err }
 
 	return db.Transaction(func(tx *gorm.DB) error {
-		tx.Exec(upsertQuery, upr.UserID, token, token)
+		err = tx.Exec(upsertQuery, upr.UserID, token, token).Error
 
 		if err != nil { return err }
 

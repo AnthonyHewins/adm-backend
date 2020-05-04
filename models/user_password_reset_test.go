@@ -1,14 +1,12 @@
 package models
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/jinzhu/gorm"
 )
 
-func TestResetPassword(t *testing.T) {
+func TestCreateResetPasswordToken(t *testing.T) {
 	DBSetupTest(nil)
 	db, _ := Connect()
 
@@ -20,7 +18,7 @@ func TestResetPassword(t *testing.T) {
 	}
 
 	// Existing user requesting PW reset for the first time -> create new PW reset entry in DB
-	u, _ := CreateUser(db, fmt.Sprintf("asod%v@soijdf.co", time.Now().UnixNano()), "sdjnsdfn")
+	u := createUser(db)
 	upr.UserID = u.ID
 	upr.CreateResetPasswordToken(db)
 	assertUPR(db, t, upr)

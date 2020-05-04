@@ -23,18 +23,20 @@ func PasswordReset(c *gin.Context) {
 
 	if query.RecordNotFound() {
 		// Don't let an attacker know they haven't found anything
-		fillWithOk(c)
+		fillWithOk(c, pwResetForm.Email)
 		return
 	} else if query.Error != nil {
 
 	}
 
 	upr := models.UserPasswordReset{UserID: user.ID}
-	err := upr.ResetPassword(db)
+	upr.CreateResetPasswordToken(db)
+
+
 }
 
-func fillWithOk(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password.", pwResetForm.Email),
-		})
+func fillWithOk(c *gin.Context, email string) {
+	c.JSON(200, gin.H{
+		"message": fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password.", email),
+	})
 }

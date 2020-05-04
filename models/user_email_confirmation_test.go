@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-	"time"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -14,14 +12,14 @@ func TestEmailConfirmation(t *testing.T) {
 	db, err := Connect()
 	if err != nil { t.Fatal(err.Error()) }
 
-	u, err := CreateUser(db, fmt.Sprintf("a%v@asdijf.com", time.Now().UnixNano()), "sadasf")
+	u := createUser(db)
 	if err != nil { t.Fatal(err.Error()) }
 
 	// Test instances where the confirmation isn't found
 	notfound(
 		t,
 		db,
-		UserEmailConfirmation{}, // blank
+		UserEmailConfirmation{},
 		UserEmailConfirmation{Token: "nonsense"},
 		UserEmailConfirmation{UserID: 100000},
 	)

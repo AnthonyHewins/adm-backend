@@ -1,12 +1,15 @@
 package models
 
 import (
-	"os"
 	"fmt"
-	"time"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestMain(m *testing.M) {
@@ -17,38 +20,43 @@ func TestMain(m *testing.M) {
 func TestCreateUser(t *testing.T) {
 	db := getDB(t)
 
-	// PW too short
-	_, err := CreateUser(db, "email@email.com", "doisjfouijsaofijaosdifj"[:passwordLength - 1])
-	if err != PasswordTooSimple {
-		t.Errorf("Should've gotten PW too simple, but got %v", err)
+	assertUser := func(err error, user *User) {
+		actual := user.Create(db)
+		assert.Equal(t, err, actual)
 	}
 
-	_, err = CreateUser(db, "invalid email", "password")
-	if err != InvalidEmail {
-		t.Errorf("Should've gotten InvalidEmail, but got %v", err)
-	}
+	// Fails
+	assertUser(PasswordTooSimple, &User{Email: "email@email.com", Password: "sdfsf"})
+	assertUser(InvalidEmail, &User{Email: "invalid email", Password: "password"})
 
-	u, err := CreateUser(db, fmt.Sprintf("v%v@email.com", time.Now().UnixNano()), "validPassword1234")
-	if err == nil {
-		uec := UserEmailConfirmation{}
-		query := db.Where("user_id = ?", u.ID).First(&uec)
+	// Success
+	email := fmt.Sprintf("HASCAPS%v@email.com", time.Now().UnixNano())
+	u := &User{Email: email, Password: "validPassword1234"}
+	assertUser(nil, u)
 
-		if query.Error == nil {
-			if uec.UserID != u.ID || uec.Token == "" {
-				t.Errorf("somehow the generated token was invalid: %v", uec)
-			}
-		} else {
-			t.Errorf("should've been able to find token for user registration, didn't: %v", query.Error)
+	// After save -> email is lowercase
+	assert.Equal(t, strings.ToLower(email), u.Email)
+
+	// After save -> Password field is gone for security
+	assert.Equal(t, "", u.Password)
+
+	// After save -> UserEmailConfirmation exists
+	uec := UserEmailConfirmation{}
+	query := db.Where("user_id = ?", u.ID).First(&uec)
+
+	if query.Error == nil {
+		if uec.UserID != u.ID || uec.Token == "" {
+			t.Errorf("somehow the generated token was invalid: %v", uec)
 		}
 	} else {
-		t.Errorf("should've successfully created user, but got %v", err)
+		t.Errorf("should've been able to find token for user registration, didn't: %v", query.Error)
 	}
 }
 
 func TestRefreshConfirmationToken(t *testing.T) {
 	db := getDB(t)
 
-	u, _ := CreateUser(db, fmt.Sprintf("realUser%v@sdmf.com", time.Now().UnixNano()), "osaidjfio")
+	u := createUser(db)
 
 	// Get the newly created confirmation for testing
 	uec := UserEmailConfirmation{}
@@ -88,9 +96,105 @@ func TestRefreshConfirmationToken(t *testing.T) {
 	}
 }
 
+func TestAuthenticate(t *testing.T) {
+	db := getDB(t)
+
+	// User not found by ID -> RecordNotFound
+	u := User{ID: 99999999999 }
+	assert.True(t, gorm.IsRecordNotFoundError(u.Authenticate(db)))
+
+	// User not found by email -> RecordNotFound
+	u = User{Email: "ansuido"}
+	assert.True(t, gorm.IsRecordNotFoundError(u.Authenticate(db)))
+
+	// Create a user
+	pw := "sdunfjsd"
+	email := fmt.Sprintf("r7rr%v@jidfos.oc", time.Now().UnixNano())
+	u = User{Email: email, Password: pw}
+	u.Create(db)
+
+	// Wrong PW, email not confirmed -> bcrypt error
+	u.Password = "saidnfhiosdjfiosdjpffff"
+	assert.Equal(t, bcrypt.ErrMismatchedHashAndPassword, u.Authenticate(db))
+
+	// Right PW, email not confirmed (results in same error) -> EmailNotConfirmed
+	u.Password = pw
+	assert.Equal(t, EmailNotConfirmed, u.Authenticate(db))
+
+	// Confirm the password, refresh the object
+	uec := UserEmailConfirmation{UserID: u.ID}
+	uec.ConfirmEmail(db)
+	db.First(&u) // fetch confirmed at info, currently doesn't have it
+
+	// Wrong PW, email confirmed -> bcrypt mismatch error
+	u.Password = "asnduikjsaf"
+	assert.Equal(t, bcrypt.ErrMismatchedHashAndPassword, u.Authenticate(db))
+
+	// Right PW, email confirmed -> error is nil
+	u.Password = pw
+	assert.Equal(t, nil, u.Authenticate(db))
+}
+
+func TestResetPassword(t *testing.T) {
+	db := getDB(t)
+
+	tooShort := "sadd"
+	good := "ahfiusdnhfisdfnoi33"
+	u := createConfirmedUser(db)
+
+	// PW too short
+	u.Password = tooShort
+	assert.Equal(t, PasswordTooSimple, u.ResetPassword(db))
+
+	// PW passed validation -> password is now different
+	u.Password = good
+	u.ResetPassword(db)
+
+	u.Password = good
+	assert.Equal(t, nil, u.Authenticate(db))
+
+	// PW passed validation -> password field is nil'd out for security
+	u.Password = good
+	u.ResetPassword(db)
+	assert.Equal(t, "", u.Password)
+
+	// PW passed validation -> all UserPasswordResets are gone
+	upr := UserPasswordReset{}
+	err := db.Where("user_id = ?", u.ID).First(&upr).Error
+	if !gorm.IsRecordNotFoundError(err) {
+		t.Errorf("all UserPasswordResets should be gone after the PW has been reset, got this error instead of RecordNotFound: %v", err)
+	}
+}
+
 func getDB(t *testing.T) *gorm.DB {
 	db, err := Connect()
 	if err != nil { t.Fatal(err.Error()) }
 
 	return db
+}
+
+func createUser(db *gorm.DB) *User {
+	u := &User{
+		Email: fmt.Sprintf("sdsuhb%v@asdji.co", time.Now().UnixNano()),
+		Password: "adsjfasdfasdfa",
+	}
+	err := u.Create(db)
+	if err != nil {
+		panic(err)
+	}
+	return u
+}
+
+func createConfirmedUser(db *gorm.DB) *User {
+	now := time.Now().Add(2 * time.Minute)
+	u := &User{
+		Email: fmt.Sprintf("sdsuhb%v@asdji.co", now.UnixNano()),
+		Password: "adsjfasdfasdfa",
+		ConfirmedAt: &now,
+	}
+	err := u.Create(db)
+	if err != nil {
+		panic(err)
+	}
+	return u
 }
