@@ -27,7 +27,7 @@ var (
 	testRsaPubkey  = "../fixtures/testkey.pub"
 )
 
-func buildRouterAndDB(t *testing.T) (*gorm.DB, *gin.Engine) {
+func BuildRouterAndDB(t *testing.T) (*gorm.DB, *gin.Engine) {
 	models.DBSetup(&models.DB{
 		Host:     "localhost",
 		Port:     5432,

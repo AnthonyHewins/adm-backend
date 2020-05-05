@@ -1,4 +1,4 @@
-package controllers
+package auth
 
 import (
 	"log"
@@ -12,7 +12,7 @@ import (
 
 var identityKey = "id"
 
-func genAuthMiddleware(privkey, pubkey string) *jwt.GinJWTMiddleware {
+func GenAuthMiddleware(privkey, pubkey string) *jwt.GinJWTMiddleware {
 	log.Printf("Bootstrapping JWT encryption with privkey '%v' and pubkey '%v'\n", privkey, pubkey)
 
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{

@@ -1,4 +1,4 @@
-package controllers
+package auth
 
 import "github.com/AnthonyHewins/adm-backend/models"
 
