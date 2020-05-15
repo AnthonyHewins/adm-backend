@@ -1,49 +1,55 @@
 package free
 
 import (
+	"reflect"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
+	"github.com/AnthonyHewins/adm-backend/controllers/api"
 )
 
-func TestFeatureEngineering(t *testing.T) {
-	router := gin.Default()
-	router.POST("/feature-engineering")
-
-	test := func(d *featureEngineeringData, eCode int, err string) {
-		resp, code := buildRequestFn(router, "POST", "/feature-engineering", d)
-		assert.Equal(t, eCode, code)
-		assert.Equal(t, err, resp["error"])
-	}
-
-	// Test missing params
+func Test_featureEngineering(t *testing.T) {
 	z := "zscore"
-	test(nil, 400, api.ErrIncorrectParams)
-	test(&featureEngineeringData{X: &[][]float64{}}, 400, api.ErrIncorrectParams)
-	test(&featureEngineeringData{Mode: &z},          400, api.ErrIncorrectParams)
+	garbageMode := "kasda"
 
 	one := []float64{1}
+	blank := &featureEngineeringReq{X: &[][]float64{[]float64{}}, Mode: &z}
+	invalidTensor := &featureEngineeringReq{X: &[][]float64{one, []float64{1, 2}}, Mode: &z}
+	invalidMode := &featureEngineeringReq{X: &[][]float64{one, one}, Mode: &garbageMode}
 
-	// Test length of array
-	test(&featureEngineeringData{X: &[][]float64{[]float64{}}, Mode: &z}, 204, "")
-
-	tooMany := make([][]float64, maxElements + 1)
-	for i, _ := range tooMany { tooMany[i] = one }
-	test(&featureEngineeringData{X: &tooMany, Mode: &z}, 422, errLength)
-
-	// Test non-rectangular matrix
-	test(
-		&featureEngineeringData{X: &[][]float64{ one, []float64{1,2} }, Mode: &z},
-		422,
-		errLength,
-	)
-
-	// Test invalid mode
-	bs := "asd"
-	test(
-		&featureEngineeringData{X: &[][]float64{one, one}, Mode: &bs},
-		422,
-		api.ErrInvalidParam,
-	)
+	tests := []struct {
+		name  string
+		args  *featureEngineeringReq
+		want  api.Payload
+		want1 *api.Error
+	}{
+		{
+			"Zero length",
+			blank,
+			blank,
+			nil,
+		},
+		{
+			"Length mismatch",
+			invalidTensor,
+			nil,
+			&api.Error{Http: 422, Code: ErrLength, Msg: "need a rectangular matrix, but row 1 had length 2, expected length 1"},
+		},
+		{
+			"Invalid mode",
+			invalidMode,
+			nil,
+			&api.Error{Http: 422, Code: ErrCmd, Msg: "don't understand mode kasda"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := featureEngineering(tt.args)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("featureEngineering() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("featureEngineering() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
 }

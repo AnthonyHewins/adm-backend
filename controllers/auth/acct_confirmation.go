@@ -11,55 +11,50 @@ import (
 	"github.com/AnthonyHewins/adm-backend/smtp"
 )
 
-func AcctConfirmation(c *gin.Context) {
+func AcctConfirmation(c *gin.Context) (api.Payload, *api.Error) {
 	token := c.Query("token")
 
 	// Don't let a botnet know this is a valid link
 	if token == "" {
 		c.String(404, "page not found")
-		return
+		return nil, nil
 	}
 
-	api.RequireDB(c, func(db *gorm.DB) {
-		uec := findConfirmation(c, db, token)
-		if uec == nil { return }
-
-		switch err := uec.ConfirmEmail(db); err {
-		case models.TokenTimeout:
-			sendNewConfirmationToken(uec.UserID, db, c)
-		case nil:
-			api.ToAffirmative(c, "email confirmed, welcome")
-		default:
-			api.Error(c, 500, err.Error())
-		}
+	return api.RequireDB(c, func(db *gorm.DB) (api.Payload, *api.Error) {
+		return acctConfirmation(db, token)
 	})
 }
 
-func findConfirmation(c *gin.Context, db *gorm.DB, token string) *models.UserEmailConfirmation {
+func acctConfirmation(db *gorm.DB, token string) (api.Payload, *api.Error) {
 	uec := models.UserEmailConfirmation{}
 
 	err := db.Where("token = ?", token).First(&uec).Error
 	switch err {
 	case gorm.ErrRecordNotFound:
-		// Don't let an attacker know
-		c.String(404, "page not found")
+		return nil, &api.Error{Http: 404, Code: api.ErrNotFound, Msg: "the server can't find what you're looking for"}
 	case nil:
-		return &uec
+		// no op
 	default:
-		api.Error(c, 500, err.Error())
+		return nil, &api.Error{Http: 500, Code: api.ErrServer, Msg: err.Error()}
 	}
 
-	return nil
+	switch err := uec.ConfirmEmail(db); err {
+	case models.TokenTimeout:
+		return sendNewConfirmationToken(db, uec.UserID)
+	case nil:
+		return &api.Affirmative{Msg: "email confirmed, welcome"}, nil
+	default:
+		return nil, &api.Error{Http: 500, Code: api.ErrServer, Msg: err.Error()}
+	}
 }
 
-func sendNewConfirmationToken(id uint64, db *gorm.DB, c *gin.Context) {
+func sendNewConfirmationToken(db *gorm.DB, id uint64) (api.Payload, *api.Error) {
 	u := models.User{ID: id}
 	db.First(&u)
 
 	token, err := u.RefreshConfirmationToken(db)
 	if err != nil {
-		api.Error(c, 500, err.Error())
-		return
+		return nil, &api.Error{Http: 500, Code: api.ErrServer, Msg: err.Error()}
 	}
 
 	var msg string
@@ -72,5 +67,5 @@ func sendNewConfirmationToken(id uint64, db *gorm.DB, c *gin.Context) {
 		)
 	}
 
-	c.JSON(422, api.ToError(ErrLate, msg))
+	return nil, &api.Error{Http: 403, Code: ErrLate, Msg: msg}
 }

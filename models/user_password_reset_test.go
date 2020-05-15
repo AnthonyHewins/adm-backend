@@ -51,7 +51,7 @@ func TestResetPassword(t *testing.T) {
 
 	// Token expired -> TokenTimeout
 	TokenTimeoutThreshold = 0
-	assert.Equal(t, TokenTimeout, upr.ResetPassword(db, ""))
+	assert.Equal(t, TokenTimeout, upr.ResetPassword(db, "fhusdh"))
 
 	TokenTimeoutThreshold = oldTokenTimeoutValue
 

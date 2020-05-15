@@ -2,54 +2,43 @@ package auth
 
 import (
 	"fmt"
-	"time"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/jinzhu/gorm"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 
+	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/AnthonyHewins/adm-backend/models"
 )
 
 func TestAcctConfirmation(t *testing.T) {
-	db, router := buildRouterAndDB(t)
+	db := dbInstance()
 
-	// 404s should occur as a security measure
-	test404s(t, router)
-
-	// Everything else
-	testConfirm(t, router, db)
-}
-
-func test404s(t *testing.T, router *gin.Engine) {
-	test := func(path string, eCode int) {
-		_, code := buildRequestFn(router, "GET", path, nil)
-		assert.Equal(t, eCode, code)
-	}
-
-	test(testConfirmation, 404)
-	test(url("DNE"),       404)
-}
-
-func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
-	test := func(path string, eCode int, err string) {
-		resp, code := buildRequestFn(router, "GET", path, nil)
-		assert.Equal(t, eCode, code)
-		assert.Equal(t, err,   resp["error"])
-	}
+	test(
+		t, db,
+		"",
+		nil,
+		&api.Error{Http: 404, Code: api.ErrNotFound, Msg: "the server can't find what you're looking for"},
+	)
 
 	// Setup: user is saved with
-	uec  := models.UserEmailConfirmation{}
-	u := models.User{Email: fmt.Sprintf("fake%v@gmail.com", time.Now().UnixNano()), Password: "iasdjoaisd"}
+	u := models.User{Email: fmt.Sprintf("fak1e%v@gmail.com", time.Now().UnixNano()), Password: "iasdjoaisd"}
 	u.Create(db)
 
 	oldTimeoutValue := models.TokenTimeoutThreshold
 
 	// Try confirm with failure
 	models.TokenTimeoutThreshold = 0
+	uec  := models.UserEmailConfirmation{}
 	db.Where("user_id = ?", u.ID).First(&uec)
-	test(url(uec.Token), 422, ERR_LATE)
+
+	test(
+		t, db,
+		uec.Token,
+		nil,
+		&api.Error{Http: 403, Code: ErrLate, Msg: "confirmed email too late; another email has been sent"},
+	)
 
 	oldToken := uec.Token
 	db.Where("user_id = ?", u.ID).First(&uec)
@@ -58,11 +47,17 @@ func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
 		t.Errorf("token should be new but isn't: (old, new) => %v, %v", oldToken, uec.Token)
 	}
 
-
 	// Try confirm with success
 	models.TokenTimeoutThreshold = oldTimeoutValue
 	db.Where("user_id = ?", u.ID).First(&uec)
-	test(url(uec.Token), 200, "")
+
+	test(
+		t, db,
+		uec.Token,
+		&api.Affirmative{Msg: "email confirmed, welcome"},
+		nil,
+	)
+
 	db.First(&u)
 
 	if u.ConfirmedAt == nil {
@@ -75,6 +70,14 @@ func testConfirm(t *testing.T, router *gin.Engine, db *gorm.DB) {
 	}
 }
 
-func url(token string) string {
-	return fmt.Sprintf("%v?token=%v", testConfirmation, token)
+func test(t *testing.T, db *gorm.DB, token string, want1 api.Payload, want2 *api.Error) {
+	t.Run(token, func(t *testing.T) {
+		got, got1 := acctConfirmation(db, token)
+		if !reflect.DeepEqual(got, want1) {
+			t.Errorf("got = %v, want %v", got, want1)
+		}
+		if !reflect.DeepEqual(got1, want2) {
+			t.Errorf("got1 = %v, want %v", got1, want2)
+		}
+	})
 }

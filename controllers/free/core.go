@@ -1,20 +1,20 @@
 package free
 
 import (
+	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	maxDegree   = 5
 	maxElements = 100
 
-	errCmd    = "cmd"
-	errLength = "length"
-	errDegree = "deg"
+	ErrCmd    = "cmd"
+	ErrLength = "length"
+	ErrDegree = "deg"
 )
 
 func AddRoutes(r *gin.Engine, apiBase string) {
 	group := r.Group(apiBase)
-	group.POST("/poly-reg",            PolynomialRegression)
-	group.POST("/feature-engineering", FeatureEngineering)
+	group.POST("/poly-reg",            api.Endpoint(PolynomialRegression))
+	group.POST("/feature-engineering", api.Endpoint(FeatureEngineering))
 }

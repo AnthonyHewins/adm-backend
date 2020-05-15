@@ -1,13 +1,11 @@
 package models
 
 import (
-	"time"
-
 	"github.com/jinzhu/gorm"
 )
 
 // Must be within 15 minutes
-var TokenTimeoutThreshold = 15 * time.Minute
+var TokenTimeoutThreshold = float64(15)
 
 type UserEmailConfirmation struct {
 	UserID uint64

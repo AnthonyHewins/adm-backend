@@ -3,60 +3,52 @@ package auth
 import (
 	"fmt"
 
+	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/AnthonyHewins/adm-backend/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
 
-type pwReset struct {
+type pwResetReq struct {
 	Email string `json:"email"`
 }
 
-func PasswordReset(c *gin.Context) {
-	var pwResetForm pwReset
-	if !forceBind(c, &pwResetForm) { return }
+func PasswordReset(c *gin.Context) (api.Payload, *api.Error){
+	var pwResetReqForm pwResetReq
+	return api.RequireBindAndDB(c, &pwResetReqForm, func(db *gorm.DB) (api.Payload, *api.Error){
+		return passwordReset(db, &pwResetReqForm)
+	})
+}
 
-	db := connectOrError(c)
-	if db == nil { return }
-
+func passwordReset(db *gorm.DB, req *pwResetReq) (api.Payload, *api.Error) {
 	user := models.User{}
-	err := db.Where("email = ?", pwResetForm.Email).First(&user).Error
+	err := db.Where("email = ?", req.Email).First(&user).Error
 
 	switch err {
 	case gorm.ErrRecordNotFound:
 		// Don't let an attacker know they found an email
-		fillWithOk(c, pwResetForm.Email)
+		return fillWithOk(req.Email)
 	case nil:
-		performReset(c, db, &user)
+		// no op
 	default:
-		c.JSON(500, gin.H{
-			"error": ERR_GENERAL,
-			"message": err.Error(),
-		})
+		return nil, &api.Error{Http: 500, Code: api.ErrServer, Msg: err.Error()}
 	}
 
-}
-
-func performReset(c *gin.Context, db *gorm.DB, user *models.User) {
 	// Email not confirmed -> they can't reset it
+	// TODO this needs to be something smarter
 	if user.ConfirmedAt == nil {
-		fillWithOk(c, user.Email)
-		return
+		return fillWithOk(user.Email)
 	}
 
 	upr := models.UserPasswordReset{UserID: user.ID}
 	if err := upr.CreateResetPasswordToken(db); err != nil {
-		c.JSON(500, gin.H{
-			"error": ERR_GENERAL,
-			"message": err.Error(),
-		})
+		return nil, &api.Error{Http: 500, Code: api.ErrServer, Msg: err.Error()}
 	}
 
-	fillWithOk(c, user.Email)
+	return fillWithOk(user.Email)
 }
 
-func fillWithOk(c *gin.Context, email string) {
-	c.JSON(200, gin.H{
-		"message": fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", email),
-	})
+func fillWithOk(email string) (api.Payload, *api.Error) {
+	msg := fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", email)
+	return &api.Affirmative{Msg: msg}, nil
 }

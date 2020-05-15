@@ -38,7 +38,7 @@ func GenAuthMiddleware(privkey, pubkey string) *jwt.GinJWTMiddleware {
 
 func unauthorizedHandler(c *gin.Context, code int, message string) {
 	c.JSON(code, gin.H{
-		"error":   ERR_UNAUTHORIZED,
+		"error": ErrUnauthorized,
 		"message": message,
 	})
 }

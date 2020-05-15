@@ -2,41 +2,61 @@ package auth
 
 import (
 	"fmt"
-	"time"
+	"reflect"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/AnthonyHewins/adm-backend/controllers/api"
+	"github.com/AnthonyHewins/adm-backend/models"
 )
 
-func TestRegister(t *testing.T) {
-	_, router := buildRouterAndDB(t)
+func Test_register(t *testing.T) {
+	db := dbInstance()
 
-	test := func(eCode int, err string, body interface{}) {
-		resp, code := buildRequestFn(router, "POST", testRegistration, body)
-		assert.Equal(t, eCode, code)
-		assert.Equal(t, err,   resp["error"])
+	existingEmail := fmt.Sprintf("r2p2r%v@sdmjoif.co", time.Now().UnixNano())
+	u := models.User{Email: existingEmail, Password: "sjdihfiusd"}
+	u.Create(db)
+
+	tests := []struct {
+		name  string
+		args  credentials
+		want  api.Payload
+		want1 *api.Error
+	}{
+		{
+			"Invalid email",
+			credentials{Email: "ausondfuio", Password: "asndoasd"},
+			nil,
+			&api.Error{Http: 422, Code: ErrEmail, Msg: ""},
+		},
+		{
+			"weak password",
+			credentials{Email: "ausondfuio", Password: "asnds"},
+			nil,
+			&api.Error{Http: 422, Code: ErrWeakPassword, Msg: ""},
+		},
+		{
+			"already existing email",
+			credentials{Email: "ausondfuio", Password: "asndoasd"},
+			nil,
+			&api.Error{Http: 422, Code: ErrEmailTaken, Msg: "email is taken, please use a different one"},
+		},
+		{
+			"success",
+			credentials{Email: fmt.Sprintf("hu%v@iodsj.co", time.Now().UnixNano()), Password: "asndoasd"},
+			&api.Affirmative{Msg: "email sent; please confirm it with the email that was sent to your address"},
+			nil,
+		},
 	}
-
-	// failed binding
-	test(400, ERR_PARAM, nil)
-
-	// invalid email (fails validation)
-	test(422, ERR_EMAIL, &credentials{Email: "sdf", Password: "sndfiush923"})
-
-	// invalid password (fails validation in length)
-	test(422, ERR_PASSWORD, &credentials{Email: "sdf@jsaiod.com", Password: "sadhj"})
-
-	now := time.Now().UnixNano()
-
-	// valid
-	test(200, "", &credentials{
-		Email: fmt.Sprintf("sd%vf@jsaiod.com", now),
-		Password: "sasdasdhj",
-	})
-
-	// already taken
-	test(422, ERR_ALREADY_EXISTS, &credentials{
-		Email: fmt.Sprintf("sd%vf@jsaiod.com", now),
-		Password: "sasdasdhj",
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := register(db, &tt.args)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("register() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("register() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
 }

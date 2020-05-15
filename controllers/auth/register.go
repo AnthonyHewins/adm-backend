@@ -4,7 +4,9 @@ import (
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 
+	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/AnthonyHewins/adm-backend/models"
 )
 
@@ -12,46 +14,33 @@ var (
 	uniquenessViolation = regexp.MustCompile("duplicate key value violates unique constraint")
 )
 
-func Register(c *gin.Context) {
+func Register(c *gin.Context) (api.Payload, *api.Error) {
 	var form credentials
 
-	if !forceBind(c, &form) { return }
+	return api.RequireBindAndDB(c, &form, func(db *gorm.DB) (api.Payload, *api.Error) {
+		return register(db, &form)
+	})
+}
 
-	db := connectOrError(c)
-	if db == nil { return }
-
-	u := form.toUser()
+func register(db *gorm.DB, req *credentials) (api.Payload, *api.Error) {
+	u := req.toUser()
 	err := u.Create(db)
 	db.Close()
 
 	switch err {
 	case models.InvalidEmail:
-		c.JSON(422, gin.H{
-			"error": ERR_EMAIL,
-			"message": err.Error(),
-		})
+		return nil, &api.Error{Http: 422, Code: ErrEmail, Msg: err.Error()}
 	case models.PasswordTooSimple:
-		c.JSON(422, gin.H{
-			"error": ERR_PASSWORD,
-			"message": err.Error(),
-		})
+		return nil, &api.Error{Http: 422, Code: ErrWeakPassword, Msg: err.Error()}
 	case nil:
-		c.JSON(200, gin.H{
-			"message": "email registered; please confirm it with the email that was sent to your address.",
-		})
+		return &api.Affirmative{Msg: "email sent; please confirm it with the email that was sent to your address"}, nil
 	default:
 		errstring := err.Error()
 
 		if uniquenessViolation.MatchString(errstring) {
-			c.JSON(422, gin.H{
-				"error": ERR_ALREADY_EXISTS,
-				"message": "email is taken, please use a different one",
-			})
+			return nil, &api.Error{Http: 422, Code: ErrEmailTaken, Msg: "email is taken, please use a different one"}
 		} else {
-			c.JSON(500, gin.H{
-				"error": ERR_GENERAL,
-				"message": errstring,
-			})
+			return nil, &api.Error{Http: 500, Code: api.ErrServer, Msg: errstring}
 		}
 	}
 }

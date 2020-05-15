@@ -2,46 +2,66 @@ package auth
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/AnthonyHewins/adm-backend/models"
-	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
 
-func TestPasswordReset(t *testing.T) {
-	db, r := buildRouterAndDB(t)
+func Test_passwordReset(t *testing.T) {
+	var config *models.DB
+	f, _ := os.Open("../../testdata/dbconfig.yml")
+	buf, _ := ioutil.ReadAll(f)
+	yaml.Unmarshal(buf, config)
+	models.DBSetup(config)
 
-	test := func (httpcode int, errorcode, msg string, body interface{}) {
-		resp, code := buildRequestFn(r, "POST", testPwReset, body)
-		assert.Equal(t, httpcode, code)
-		assert.Equal(t, errorcode, resp["error"])
-		assert.Equal(t, msg, resp["message"])
+	db, _ := models.Connect()
+
+	notConfirmed := models.User{Email: fmt.Sprintf("r42r%v@sdmjoif.co", time.Now().UnixNano()), Password: "dsouifj"}
+	notConfirmed.Create(db)
+
+	confirmed := models.User{Email: fmt.Sprintf("r92r%v@sdmjoif.co", time.Now().UnixNano()), Password: "dsouifj"}
+	confirmed.Create(db)
+
+	tests := []struct {
+		name  string
+		args  pwResetReq
+		want  api.Payload
+		want1 *api.Error
+	}{
+		{
+			"Fake RecordNotFound with affirmative",
+			pwResetReq{Email: "suhf"},
+			api.Affirmative{Msg: "if the account for suhf exists, an email has been sent to reset the password"},
+			nil,
+		},
+		{
+			"Not confirmed email fakes affirmative (this should be different)",
+			pwResetReq{Email: notConfirmed.Email},
+			api.Affirmative{Msg: fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", notConfirmed.Email)},
+			nil,
+		},
+		{
+			"Fake RecordNotFound with affirmative",
+			pwResetReq{Email: "suhf"},
+			api.Affirmative{Msg: "if the account for suhf exists, an email has been sent to reset the password"},
+			nil,
+		},
 	}
-
-	// No bind -> 400
-	test(400, ERR_PARAM, "invalid request", nil)
-
-	// Can't find user -> 200, don't let them know the email exists
-	email := "asiuhdi"
-	test(200, "", fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", email), &pwReset{Email: email})
-
-	// TODO this may be better serviced by re-sending the confirmation link
-	// User found, email not confirmed -> do nothing, but tell the user 200 OK
-	u := models.User{Email: fmt.Sprintf("asdd%v@sdf.co", time.Now().UnixNano()), Password: "asiuohjdoasjd"}
-	u.Create(db)
-	test(200, "", fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", u.Email), &pwReset{Email: u.Email})
-
-	// No reset tokens generated
-	upr := models.UserPasswordReset{UserID: u.ID}
-	err := db.Where("user_id = ?", u.ID).First(&upr).Error
-	assert.Equal(t, gorm.ErrRecordNotFound, err)
-
-	// User exists, email confirmed -> Everything should work
-	uec := models.UserEmailConfirmation{UserID: u.ID}
-	uec.ConfirmEmail(db)
-	test(200, "", fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", u.Email), &pwReset{Email: u.Email})
-
-	assert.False(t, db.Where("user_id = ?", upr.UserID).First(&upr).RecordNotFound())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := passwordReset(db, &tt.args)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("passwordReset() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("passwordReset() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
 }

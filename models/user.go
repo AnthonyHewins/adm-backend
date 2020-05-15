@@ -139,9 +139,11 @@ func (u *User) ResetPassword(db *gorm.DB) error {
 	u.Password = ""
 
 	return db.Transaction(func(tx *gorm.DB) error {
-		err = db.Save(&u).Error
+		if err = tx.Model(&u).Update("password", u.HashedPassword).Error; err != nil {
+			return err
+		}
 
-		return db.Where("user_id = ?", u.ID).Delete(&UserPasswordReset{}).Error
+		return tx.Where("user_id = ?", u.ID).Delete(&UserPasswordReset{}).Error
 	})
 }
 
@@ -151,7 +153,5 @@ func isPasswordValid(s string) bool {
 }
 
 func userTokenExpiryCheck(t time.Time) bool {
-	minutesPassedSinceRegistration := time.Duration(time.Since(t).Minutes())
-
-	return minutesPassedSinceRegistration > TokenTimeoutThreshold
+	return time.Since(t).Minutes() < TokenTimeoutThreshold
 }

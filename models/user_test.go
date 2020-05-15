@@ -61,7 +61,7 @@ func TestRefreshConfirmationToken(t *testing.T) {
 	// Get the newly created confirmation for testing
 	uec := UserEmailConfirmation{}
 	db.Where("user_id = ?", u.ID).First(&uec)
-	db.Where("id = ?",      u.ID).First(&u)
+	db.Where("id = ?", u.ID).First(&u)
 
 	// Timestamp the moment after creation, before refreshing for a test
 	oldRegisterTime := u.RegisteredAt.UnixNano()
@@ -100,7 +100,7 @@ func TestAuthenticate(t *testing.T) {
 	db := getDB(t)
 
 	// User not found by ID -> RecordNotFound
-	u := User{ID: 99999999999 }
+	u := User{ID: 99999999999}
 	assert.True(t, gorm.IsRecordNotFoundError(u.Authenticate(db)))
 
 	// User not found by email -> RecordNotFound
@@ -151,6 +151,7 @@ func TestUserResetPassword(t *testing.T) {
 	u.ResetPassword(db)
 
 	u.Password = good
+	t.Log(u)
 	assert.Equal(t, nil, u.Authenticate(db))
 
 	// PW passed validation -> password field is nil'd out for security
@@ -168,14 +169,16 @@ func TestUserResetPassword(t *testing.T) {
 
 func getDB(t *testing.T) *gorm.DB {
 	db, err := Connect()
-	if err != nil { t.Fatal(err.Error()) }
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 
 	return db
 }
 
 func createUser(db *gorm.DB) *User {
 	u := &User{
-		Email: fmt.Sprintf("sdsuhb%v@asdji.co", time.Now().UnixNano()),
+		Email:    fmt.Sprintf("sdsuhb%v@asdji.co", time.Now().UnixNano()),
 		Password: "adsjfasdfasdfa",
 	}
 	err := u.Create(db)
@@ -188,8 +191,8 @@ func createUser(db *gorm.DB) *User {
 func createConfirmedUser(db *gorm.DB) *User {
 	now := time.Now().Add(2 * time.Minute)
 	u := &User{
-		Email: fmt.Sprintf("sdsuhb%v@asdji.co", now.UnixNano()),
-		Password: "adsjfasdfasdfa",
+		Email:       fmt.Sprintf("sdsuhb%v@asdji.co", now.UnixNano()),
+		Password:    "adsjfasdfasdfa",
 		ConfirmedAt: &now,
 	}
 	err := u.Create(db)
@@ -197,4 +200,38 @@ func createConfirmedUser(db *gorm.DB) *User {
 		panic(err)
 	}
 	return u
+}
+
+func TestUserTokenExpiry(t *testing.T) {
+	now := time.Now()
+
+	beforeThreshold := now.Add(-time.Duration(14) * time.Minute)
+	afterThreshold := now.Add(-time.Duration(15) * time.Minute)
+
+	
+	tests := []struct {
+		name    string
+		args    time.Time
+		want bool
+	}{
+		{
+			fmt.Sprintf("Is fine before %v", TokenTimeoutThreshold),
+			beforeThreshold,
+			true,
+		},
+		{
+			fmt.Sprintf("invalid after %v", TokenTimeoutThreshold),
+			afterThreshold,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			x := time.Since(tt.args).Minutes()
+			t.Log(x)
+			if userTokenExpiryCheck(tt.args) != tt.want {
+				t.Errorf("expiry check error for input %v, want %v", tt.args, tt.want)
+			}
+		})
+	}
 }
