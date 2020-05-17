@@ -15,7 +15,7 @@ func Test_polynomialRegression(t *testing.T) {
 	validOne := 1
 	invalidSix := 6
 
-	tooLong := make([]float64, maxElements + 1)
+	tooLong := make([]float64, maxElements+1)
 
 	tests := []struct {
 		name  string

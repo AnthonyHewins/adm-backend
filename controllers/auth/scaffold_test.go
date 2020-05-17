@@ -7,10 +7,10 @@ import (
 
 func dbInstance() *gorm.DB {
 	models.DBSetup(&models.DB{
-		Host: "localhost",
-		Port: 5432,
-		Name: "admtest",
-		User: "test",
+		Host:     "localhost",
+		Port:     5432,
+		Name:     "admtest",
+		User:     "test",
 		Password: "test",
 	})
 

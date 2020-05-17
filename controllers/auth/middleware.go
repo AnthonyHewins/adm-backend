@@ -16,29 +16,31 @@ func GenAuthMiddleware(privkey, pubkey string) *jwt.GinJWTMiddleware {
 	log.Printf("Bootstrapping JWT encryption with privkey '%v' and pubkey '%v'\n", privkey, pubkey)
 
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
-		Realm: "/tools",
-		MaxRefresh:  time.Hour,
+		Realm:      "/tools",
+		MaxRefresh: time.Hour,
 
 		SigningAlgorithm: "RS256",
 		PrivKeyFile:      privkey,
 		PubKeyFile:       pubkey,
 
-		IdentityKey:     identityKey,
+		IdentityKey: identityKey,
 
-		Unauthorized:    unauthorizedHandler,
+		Unauthorized: unauthorizedHandler,
 
 		Authenticator: authenticate,
 		Authorizator:  authorizator,
 	})
 
-	if err != nil { log.Fatalln(err) }
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	return authMiddleware
 }
 
 func unauthorizedHandler(c *gin.Context, code int, message string) {
 	c.JSON(code, gin.H{
-		"error": ErrUnauthorized,
+		"error":   ErrUnauthorized,
 		"message": message,
 	})
 }
@@ -50,7 +52,9 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	}
 
 	db, err := models.Connect()
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	user := models.User{Email: loginVals.Email, Password: loginVals.Password}
 	err = user.Authenticate(db)

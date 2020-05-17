@@ -1,15 +1,15 @@
 package main
 
 import (
-	"io/ioutil"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/AnthonyHewins/adm-backend/models"
 	"github.com/AnthonyHewins/adm-backend/controllers"
+	"github.com/AnthonyHewins/adm-backend/models"
 	"github.com/AnthonyHewins/adm-backend/smtp"
 )
 
@@ -22,13 +22,15 @@ type config struct {
 	Pubkey  string `yaml:"pubkey"`
 	ApiBase string `yaml:"apiBase"`
 
-	Smtp    smtp.Smtp            `yaml:"smtp"`
-	DB	    models.DB            `yaml:"db"`
+	Smtp smtp.Smtp `yaml:"smtp"`
+	DB   models.DB `yaml:"db"`
 }
 
 func readConfig(file *string) config {
 	fptr, err := ioutil.ReadFile(*file)
-	if err != nil { log.Fatalln(err) }
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	var c config
 	if err := yaml.Unmarshal(fptr, &c); err != nil {
@@ -67,7 +69,9 @@ func main() {
 
 	log.Println("Quickly testing connection...")
 	db, err := models.Connect()
-	if err != nil { log.Fatalln(err) }
+	if err != nil {
+		log.Fatalln(err)
+	}
 	db.Close()
 	log.Println("Connection verified.")
 

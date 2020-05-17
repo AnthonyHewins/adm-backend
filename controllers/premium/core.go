@@ -7,7 +7,9 @@ import (
 
 func AddRoutes(r *gin.Engine, apiBase string, jwtMiddleware *jwt.GinJWTMiddleware) {
 	group := r.Group(apiBase)
-	group.Use(jwtMiddleware.MiddlewareFunc())
 
-	r.POST("/dcf-valuation", DcfValuation)
+	group.Use(jwtMiddleware.MiddlewareFunc())
+	{
+		group.POST("/dcf-valuation", DcfValuation)
+	}
 }

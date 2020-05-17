@@ -123,7 +123,9 @@ func TestAuthenticate(t *testing.T) {
 
 	// Confirm the password, refresh the object
 	uec := UserEmailConfirmation{UserID: u.ID}
-	if err := uec.ConfirmEmail(db); err != nil { t.Fatal(err) }
+	if err := uec.ConfirmEmail(db); err != nil {
+		t.Fatal(err)
+	}
 	db.First(&u) // fetch confirmed at info, currently doesn't have it
 
 	// Wrong PW, email confirmed -> bcrypt mismatch error

@@ -1,10 +1,10 @@
 package models
 
 import (
-	"fmt"
-	"time"
-	"math/rand"
 	"encoding/base64"
+	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -16,6 +16,7 @@ type DB struct {
 	Name     string `yaml:"name"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
+	SslMode  string `yaml:"sslmode"`
 }
 
 var (
@@ -24,7 +25,7 @@ var (
 	TokenTimeout = &Error{s: "token has expired; you will need a new one to proceed with this action"}
 )
 
-type Error struct { s string }
+type Error struct{ s string }
 
 func (e *Error) Error() string {
 	return e.s
@@ -36,12 +37,13 @@ func Connect() (*gorm.DB, error) {
 
 func DBSetup(dbConfig *DB) {
 	masterConfig = fmt.Sprintf(
-		"host=%v port=%v dbname=%v user=%v password=%v",
+		"host=%v port=%v dbname=%v user=%v password=%v sslmode=%v",
 		dbConfig.Host,
 		dbConfig.Port,
 		dbConfig.Name,
 		dbConfig.User,
 		dbConfig.Password,
+		dbConfig.SslMode,
 	)
 }
 
@@ -55,7 +57,9 @@ func base64ConfirmationString() (string, error) {
 	// Atrociously bad algo ATM, but good for now;
 	// improve the speed and wasted computations later
 	b := make([]byte, 40, 40)
-	if _, err := rand.Read(b); err != nil { return "", err }
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
 
 	return base64.URLEncoding.EncodeToString(b)[:40], nil
 }

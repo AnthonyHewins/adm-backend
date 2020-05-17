@@ -18,10 +18,10 @@ type featureEngineeringReq struct {
 }
 
 func (f *featureEngineeringReq) ToPayload() gin.H {
-	return gin.H{ "x": f.X }
+	return gin.H{"x": f.X}
 }
 
-func FeatureEngineering(c *gin.Context) (api.Payload, *api.Error){
+func FeatureEngineering(c *gin.Context) (api.Payload, *api.Error) {
 	var X featureEngineeringReq
 
 	return api.RequireBind(c, &X, func() (api.Payload, *api.Error) {
@@ -39,7 +39,7 @@ func featureEngineering(x *featureEngineeringReq) (api.Payload, *api.Error) {
 
 	m := len(a[0])
 
-	if m * n > maxElements {
+	if m*n > maxElements {
 		return nil, &api.Error{Http: 422, Code: ErrLength, Msg: fmt.Sprintf(errTooManyElements, n, m, maxElements)}
 	}
 
@@ -67,9 +67,13 @@ func verticalMap(n, m int, x [][]float64, fn func([]float64)) {
 	for i := 0; i < m; i++ {
 
 		buf := make([]float64, n)
-		for j := 0; j < n; j++ { buf[j]  = x[j][i] }
+		for j := 0; j < n; j++ {
+			buf[j] = x[j][i]
+		}
 
 		fn(buf)
-		for j := 0; j < n; j++ { x[j][i] = buf[j]  }
+		for j := 0; j < n; j++ {
+			x[j][i] = buf[j]
+		}
 	}
 }

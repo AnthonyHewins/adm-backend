@@ -1,6 +1,7 @@
 package smtp
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 
@@ -42,7 +43,9 @@ func transactional(email, token, header, instructions string) error {
 	}
 
 	link := fmt.Sprintf(
-		"%v%v?token=%v",
+		// Note: first two args are paths so they end in /
+		// baseUrl/ + confirmUrl/ + "/" + token
+		"%v%v/%v",
 		smtpMasterConfig.baseUrl,
 		smtpMasterConfig.smtpSettings.ConfirmationUrl,
 		token,
@@ -50,15 +53,15 @@ func transactional(email, token, header, instructions string) error {
 
 	htmlMarkup := hermes.Email{
 		Body: hermes.Body{
-			Name: email,
-			Intros: []string{ header },
+			Name:   email,
+			Intros: []string{header},
 			Actions: []hermes.Action{
 				{
 					Instructions: instructions,
 					Button: hermes.Button{
 						//Color: "#22BC66",
-						Text:  "Continue",
-						Link:  link,
+						Text: "Continue",
+						Link: link,
 					},
 				},
 			},
@@ -70,7 +73,9 @@ func transactional(email, token, header, instructions string) error {
 	}
 
 	emailBody, err := smtpMasterConfig.theme.GenerateHTML(htmlMarkup)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	m := gomail.NewMessage()
 
@@ -85,6 +90,7 @@ func transactional(email, token, header, instructions string) error {
 		smtpMasterConfig.smtpSettings.Email,
 		smtpMasterConfig.smtpSettings.Password,
 	)
+	d.TLSConfig = &tls.Config{ InsecureSkipVerify: true	}
 
 	return d.DialAndSend(m)
 }

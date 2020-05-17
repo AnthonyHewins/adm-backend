@@ -30,7 +30,7 @@ func TestAcctConfirmation(t *testing.T) {
 
 	// Try confirm with failure
 	models.TokenTimeoutThreshold = -100000000000
-	uec  := models.UserEmailConfirmation{}
+	uec := models.UserEmailConfirmation{}
 	db.Where("user_id = ?", u.ID).First(&uec)
 
 	test(

@@ -15,6 +15,6 @@ const (
 
 func AddRoutes(r *gin.Engine, apiBase string) {
 	group := r.Group(apiBase)
-	group.POST("/poly-reg",            api.Endpoint(PolynomialRegression))
+	group.POST("/poly-reg", api.Endpoint(PolynomialRegression))
 	group.POST("/feature-engineering", api.Endpoint(FeatureEngineering))
 }

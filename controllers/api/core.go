@@ -1,15 +1,15 @@
 package api
 
 import (
-	"github.com/jinzhu/gorm"
-	"github.com/gin-gonic/gin"
 	"github.com/AnthonyHewins/adm-backend/models"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 )
 
 const (
 	ErrFormIncorrect = "form-incorrect"
-	ErrNotFound = "not-found"
-	ErrServer = "server"
+	ErrNotFound      = "not-found"
+	ErrServer        = "server"
 )
 
 type Payload interface {
@@ -21,7 +21,7 @@ type Affirmative struct {
 }
 
 func (a Affirmative) ToPayload() gin.H {
-	return gin.H{ "message": a.Msg }
+	return gin.H{"message": a.Msg}
 }
 
 type Error struct {
@@ -32,14 +32,14 @@ type Error struct {
 
 func (e Error) ToPayload() gin.H {
 	return gin.H{
-		"error": e.Code,
+		"error":   e.Code,
 		"message": e.Msg,
 	}
 }
 
 type ApiEndpoint func(c *gin.Context) (Payload, *Error)
-type FormLambda  func() (Payload, *Error)
-type DBLambda    func(db *gorm.DB) (Payload, *Error)
+type FormLambda func() (Payload, *Error)
+type DBLambda func(db *gorm.DB) (Payload, *Error)
 
 func Endpoint(fn ApiEndpoint) func(c *gin.Context) {
 	return func(c *gin.Context) {

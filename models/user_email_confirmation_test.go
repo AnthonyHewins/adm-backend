@@ -13,9 +13,9 @@ func TestUserEmailConfirmation_ConfirmEmail(t *testing.T) {
 	willConfirm := createUser(db)
 
 	tests := []struct {
-		name    string
-		uec UserEmailConfirmation
-		err error
+		name string
+		uec  UserEmailConfirmation
+		err  error
 	}{
 		{
 			"Not found due to token being meaningless",

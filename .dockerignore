@@ -1,3 +1,7 @@
 **/.git
 README.md
 *test.go
+**/migrations
+**/testdata
+server-config.*
+devkey*

@@ -1,5 +1,22 @@
+appName: "Artifex de Machina"
+baseUrl: "https://artifexdemachina.com"
+privkey: "devkey"
+pubkey: "devkey.pub"
+apiBase: "/api/v1"
 smtp:
-  email: "email@example.com"
-  password: "good password"
+  email: "emailaddress"
+  password: "fill in"
   domain: "domain"
-  port: 443
+  port: 587
+  confirmationUrl: "/confirm-acct"
+  # do you actually want to send? in case you're testing and whatnot
+  send: true
+db:
+  host: "localhost"
+  port: 5432
+  name: "db"
+  user: "user"
+  password: "password"
+
+  # "require" (default), "verify-full", "verify-ca", and "disable"
+  sslmode: "disable"
