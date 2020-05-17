@@ -1,5 +1,6 @@
 package models
 
+/*
 import (
 	"time"
 
@@ -30,9 +31,9 @@ func (upr *UserPasswordReset) CreateResetPasswordToken(db *gorm.DB) error {
 	upr.Token = token
 
 	return db.Transaction(func(tx *gorm.DB) error {
-		err = tx.Exec(upsertQuery, upr.UserID, token, token).Error
-
-		if err != nil { return err }
+		if err = tx.Exec(upsertQuery, upr.UserID, token, token).Error; err != nil {
+			return err
+		}
 
 		return smtp.PasswordReset(u.Email, token)
 	})
@@ -48,10 +49,11 @@ func (upr *UserPasswordReset) ResetPassword(db *gorm.DB, newPw string) error {
 
 	if err != nil { return err }
 
-	if userTokenExpiryCheck(upr.ResetAt) {
+	if userTokenExpired(upr.ResetAt) {
 		return TokenTimeout
 	}
 
 	u := User{ID: upr.UserID, Password: newPw}
 	return u.ResetPassword(db)
 }
+*/

@@ -25,7 +25,6 @@ func Register(c *gin.Context) (api.Payload, *api.Error) {
 func register(db *gorm.DB, req *credentials) (api.Payload, *api.Error) {
 	u := req.toUser()
 	err := u.Create(db)
-	db.Close()
 
 	switch err {
 	case models.InvalidEmail:

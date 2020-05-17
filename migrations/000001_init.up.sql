@@ -4,7 +4,7 @@ create table if not exists users (
        id               bigserial primary key not null,
        email            varchar(255) not null unique,
        password         varchar(60) not null,
-       registered_at    timestamp not null default CURRENT_TIMESTAMP,
+       registered_at    timestamp with time zone not null default CURRENT_TIMESTAMP,
        confirmed_at     timestamp,
 
        constraint register_before_confirmation check (registered_at <= confirmed_at)

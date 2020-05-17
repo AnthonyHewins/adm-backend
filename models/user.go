@@ -26,6 +26,8 @@ var (
 	PasswordTooSimple = &Error{s: fmt.Sprintf("password needs to be at least %v characters", passwordLength)}
 	AlreadyConfirmed  = &Error{s: "email is already confirmed"}
 	EmailNotConfirmed = &Error{s: "you have not confirmed your email yet; please confirm it to log in"}
+
+	TokenTimeoutThreshold = 15 * time.Minute
 )
 
 type User struct {
@@ -125,6 +127,7 @@ func (u *User) Authenticate(db *gorm.DB) error {
 	return nil
 }
 
+/*
 func (u *User) ResetPassword(db *gorm.DB) error {
 	if !isPasswordValid(u.Password) {
 		return PasswordTooSimple
@@ -143,15 +146,20 @@ func (u *User) ResetPassword(db *gorm.DB) error {
 			return err
 		}
 
+		u.Password = ""
+
 		return tx.Where("user_id = ?", u.ID).Delete(&UserPasswordReset{}).Error
 	})
 }
+*/
 
 func isPasswordValid(s string) bool {
 	// this will grow in the future
 	return len(s) >= passwordLength
 }
 
-func userTokenExpiryCheck(t time.Time) bool {
-	return time.Since(t).Minutes() < TokenTimeoutThreshold
+func userTokenExpired(t time.Time) bool {
+	nowUTC := time.Now().In(t.Location())
+	threshold := t.Add(TokenTimeoutThreshold)
+	return nowUTC.After(threshold)
 }

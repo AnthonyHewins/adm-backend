@@ -4,9 +4,6 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// Must be within 15 minutes
-var TokenTimeoutThreshold = float64(15)
-
 type UserEmailConfirmation struct {
 	UserID uint64
 	Token  string
@@ -22,7 +19,7 @@ func (uec *UserEmailConfirmation) ConfirmEmail(db *gorm.DB) error {
 	u := User{ID: uec.UserID}
 	if err := db.First(&u).Error; err != nil { return err }
 
-	if userTokenExpiryCheck(u.RegisteredAt) {
+	if userTokenExpired(u.RegisteredAt) {
 		return TokenTimeout
 	}
 
