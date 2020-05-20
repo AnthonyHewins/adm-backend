@@ -36,6 +36,13 @@ func Connect() (*gorm.DB, error) {
 }
 
 func DBSetup(dbConfig *DB) {
+	var sslmode string
+	if (dbConfig.SslMode == "") {
+		sslmode = "require"
+	} else {
+		sslmode = dbConfig.SslMode
+	}
+
 	masterConfig = fmt.Sprintf(
 		"host=%v port=%v dbname=%v user=%v password=%v sslmode=%v",
 		dbConfig.Host,
@@ -43,7 +50,7 @@ func DBSetup(dbConfig *DB) {
 		dbConfig.Name,
 		dbConfig.User,
 		dbConfig.Password,
-		dbConfig.SslMode,
+		sslmode,
 	)
 }
 

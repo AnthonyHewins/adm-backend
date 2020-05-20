@@ -12,6 +12,7 @@ func dbInstance() *gorm.DB {
 		Name:     "admtest",
 		User:     "test",
 		Password: "test",
+		SslMode: "disable",
 	})
 
 	db, err := models.Connect()
