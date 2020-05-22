@@ -1,6 +1,5 @@
 package auth
 
-/*
 import (
 	"fmt"
 	"io/ioutil"
@@ -66,4 +65,3 @@ func Test_passwordReset(t *testing.T) {
 		})
 	}
 }
-*/

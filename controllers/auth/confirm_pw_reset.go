@@ -1,6 +1,5 @@
 package auth
 
-/*
 import (
 	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/AnthonyHewins/adm-backend/models"
@@ -37,4 +36,3 @@ func confirmPwReset(db *gorm.DB, resetForm *pwResetReqConfirm) (api.Payload, *ap
 		return nil, &api.Error{Http: 500, Code: api.ErrServer, Msg: err.Error()}
 	}
 }
-*/

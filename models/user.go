@@ -127,7 +127,6 @@ func (u *User) Authenticate(db *gorm.DB) error {
 	return nil
 }
 
-/*
 func (u *User) ResetPassword(db *gorm.DB) error {
 	if !isPasswordValid(u.Password) {
 		return PasswordTooSimple
@@ -151,7 +150,6 @@ func (u *User) ResetPassword(db *gorm.DB) error {
 		return tx.Where("user_id = ?", u.ID).Delete(&UserPasswordReset{}).Error
 	})
 }
-*/
 
 func isPasswordValid(s string) bool {
 	// this will grow in the future

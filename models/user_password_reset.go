@@ -1,6 +1,5 @@
 package models
 
-/*
 import (
 	"time"
 
@@ -56,4 +55,3 @@ func (upr *UserPasswordReset) ResetPassword(db *gorm.DB, newPw string) error {
 	u := User{ID: upr.UserID, Password: newPw}
 	return u.ResetPassword(db)
 }
-*/

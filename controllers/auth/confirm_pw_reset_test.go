@@ -1,6 +1,5 @@
 package auth
 
-/*
 import (
 	"fmt"
 	"reflect"
@@ -13,24 +12,27 @@ import (
 
 func TestConfirmPwReset(t *testing.T) {
 	db := dbInstance()
+	db.LogMode(true)
 
 	// Build the state needed in the DB
 	pw := "sndfojus"
-	u := models.User{Email: fmt.Sprintf("r22r%v@sdmjoif.co", time.Now().UnixNano()), Password: pw}
+	u := models.User{Email: fmt.Sprintf("r22rasdd%v@sdmjoif.co", time.Now().UnixNano()), Password: pw}
 	u.Create(db)
 
 	upr := models.UserPasswordReset{UserID: u.ID}
-	upr.CreateResetPasswordToken(db)
+	err := upr.CreateResetPasswordToken(db)
+	if err != nil { t.Fatalf("Failed creation of UserPasswordReset: %v", err) }
+	db.First(&upr)
 
 	// Build the state needed in the DB
 	timeoutPw := "sndfojus"
-	timedout := models.User{Email: fmt.Sprintf("r22r%v@sdmjoif.co", time.Now().UnixNano()), Password: timeoutPw}
+	timedout := models.User{Email: fmt.Sprintf("r123122dr%v@sdmjoif.co", time.Now().UnixNano()), Password: timeoutPw}
 	timedout.Create(db)
 
 	timedoutUpr := models.UserPasswordReset{UserID: timedout.ID}
-	upr.CreateResetPasswordToken(db)
-	db.First(&timedoutUpr)
+	timedoutUpr.CreateResetPasswordToken(db)
 	db.Model(&timedoutUpr).Where("user_id = ?", timedout.ID).Update("reset_at", time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
+	db.First(&timedoutUpr)
 
 	tests := []struct {
 		name  string
@@ -75,4 +77,3 @@ func TestConfirmPwReset(t *testing.T) {
 		})
 	}
 }
-*/

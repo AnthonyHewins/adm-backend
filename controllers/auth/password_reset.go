@@ -1,6 +1,5 @@
 package auth
 
-/*
 import (
 	"fmt"
 
@@ -52,4 +51,3 @@ func fillWithOk(email string) (api.Payload, *api.Error) {
 	msg := fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", email)
 	return &api.Affirmative{Msg: msg}, nil
 }
-*/

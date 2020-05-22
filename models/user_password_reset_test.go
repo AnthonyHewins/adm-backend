@@ -1,6 +1,5 @@
 package models
 
-/*
 import (
 	"testing"
 
@@ -82,4 +81,3 @@ func assertUPR(db *gorm.DB, t *testing.T, mustBeDifferentThan UserPasswordReset)
 		assert.NotEqual(t, mustBeDifferentThan.ResetAt, upr.ResetAt)
 	}
 }
-*/
