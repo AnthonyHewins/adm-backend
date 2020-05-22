@@ -12,7 +12,6 @@ import (
 
 func TestConfirmPwReset(t *testing.T) {
 	db := dbInstance()
-	db.LogMode(true)
 
 	// Build the state needed in the DB
 	pw := "sndfojus"
@@ -22,7 +21,6 @@ func TestConfirmPwReset(t *testing.T) {
 	upr := models.UserPasswordReset{UserID: u.ID}
 	err := upr.CreateResetPasswordToken(db)
 	if err != nil { t.Fatalf("Failed creation of UserPasswordReset: %v", err) }
-	db.First(&upr)
 
 	// Build the state needed in the DB
 	timeoutPw := "sndfojus"
@@ -75,5 +73,15 @@ func TestConfirmPwReset(t *testing.T) {
 				t.Errorf("ConfirmPwReset() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
+	}
+
+	// New password works
+	uec := models.UserEmailConfirmation{}
+	db.Where("user_id = ?", u.ID).First(&uec)
+	uec.ConfirmEmail(db)
+
+	u.Password = pw
+	if err := u.Authenticate(db); err != nil {
+		t.Errorf("successful password reset is not changing the password around? Got err: %v", err)
 	}
 }

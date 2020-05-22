@@ -2,30 +2,21 @@ package auth
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/AnthonyHewins/adm-backend/models"
-	"gopkg.in/yaml.v2"
 )
 
 func Test_passwordReset(t *testing.T) {
-	var config *models.DB
-	f, _ := os.Open("../../testdata/dbconfig.yml")
-	buf, _ := ioutil.ReadAll(f)
-	yaml.Unmarshal(buf, config)
-	models.DBSetup(config)
+	db := dbInstance()
 
-	db, _ := models.Connect()
-
-	notConfirmed := models.User{Email: fmt.Sprintf("r42r%v@sdmjoif.co", time.Now().UnixNano()), Password: "dsouifj"}
+	notConfirmed := models.User{Email: fmt.Sprintf("ddr42r%v@sdmjoif.co", time.Now().UnixNano()), Password: "dsouifj"}
 	notConfirmed.Create(db)
 
-	confirmed := models.User{Email: fmt.Sprintf("r92r%v@sdmjoif.co", time.Now().UnixNano()), Password: "dsouifj"}
+	confirmed := models.User{Email: fmt.Sprintf("qqr92r%v@sdmjoif.co", time.Now().UnixNano()), Password: "dsouifj"}
 	confirmed.Create(db)
 
 	tests := []struct {
@@ -37,19 +28,19 @@ func Test_passwordReset(t *testing.T) {
 		{
 			"Fake RecordNotFound with affirmative",
 			pwResetReq{Email: "suhf"},
-			api.Affirmative{Msg: "if the account for suhf exists, an email has been sent to reset the password"},
+			&api.Affirmative{Msg: "if the account for suhf exists, an email has been sent to reset the password"},
 			nil,
 		},
 		{
 			"Not confirmed email fakes affirmative (this should be different)",
 			pwResetReq{Email: notConfirmed.Email},
-			api.Affirmative{Msg: fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", notConfirmed.Email)},
+			&api.Affirmative{Msg: fmt.Sprintf("if the account for %v exists, an email has been sent to reset the password", notConfirmed.Email)},
 			nil,
 		},
 		{
 			"Fake RecordNotFound with affirmative",
 			pwResetReq{Email: "suhf"},
-			api.Affirmative{Msg: "if the account for suhf exists, an email has been sent to reset the password"},
+			&api.Affirmative{Msg: "if the account for suhf exists, an email has been sent to reset the password"},
 			nil,
 		},
 	}
