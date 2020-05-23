@@ -22,7 +22,7 @@ func AddRoutes(r *gin.Engine, apiBase string, jwtMiddleware *jwt.GinJWTMiddlewar
 		unsecured.GET("/confirm-acct", api.Endpoint(AcctConfirmation))
 
 		unsecured.POST("/reset-password", api.Endpoint(PasswordReset))
-		unsecured.POST("/confirm-reset", api.Endpoint(ConfirmPwReset))
+		unsecured.POST("/confirm-password-reset", api.Endpoint(ConfirmPwReset))
 
 		unsecured.POST("/login", jwtMiddleware.LoginHandler)
 	}
