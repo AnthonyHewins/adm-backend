@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/AnthonyHewins/adm-backend/controllers/api"
 	"github.com/AnthonyHewins/adm-backend/models"
@@ -26,6 +27,7 @@ func passwordReset(db *gorm.DB, req *pwResetReq) (api.Payload, *api.Error) {
 	switch err {
 	case gorm.ErrRecordNotFound:
 		// Don't let an attacker know they found an email
+		log.Println("Password reset: User not found, faking 200")
 		return fillWithOk(req.Email)
 	case nil:
 		// no op
@@ -36,6 +38,7 @@ func passwordReset(db *gorm.DB, req *pwResetReq) (api.Payload, *api.Error) {
 	// Email not confirmed -> they can't reset it
 	// TODO this needs to be something smarter
 	if user.ConfirmedAt == nil {
+		log.Printf("Password reset: User isn't confirmed: %v", user)
 		return fillWithOk(user.Email)
 	}
 

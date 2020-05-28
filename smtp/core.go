@@ -1,8 +1,12 @@
 package smtp
 
 import (
+	"crypto/tls"
 	"fmt"
+	"log"
+
 	"github.com/matcornic/hermes/v2"
+	"gopkg.in/gomail.v2"
 )
 
 var smtpMasterConfig masterConfig
@@ -38,4 +42,28 @@ func EmailSetup(smtpSettings *Smtp, appName, baseUrl string) {
 			},
 		},
 	}
+}
+
+func sendEmail(to, subject, body string) error {
+	if !smtpMasterConfig.smtpSettings.Send {
+		log.Println("Sending is OFF; faked an email send.")
+		return nil
+	}
+
+	m := gomail.NewMessage()
+
+	m.SetHeader("From", smtpMasterConfig.smtpSettings.Email)
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", body)
+
+	d := gomail.NewDialer(
+		smtpMasterConfig.smtpSettings.Domain,
+		smtpMasterConfig.smtpSettings.Port,
+		smtpMasterConfig.smtpSettings.Email,
+		smtpMasterConfig.smtpSettings.Password,
+	)
+	d.TLSConfig = &tls.Config{ InsecureSkipVerify: true	}
+
+	return d.DialAndSend(m)
 }

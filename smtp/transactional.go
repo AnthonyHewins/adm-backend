@@ -1,12 +1,9 @@
 package smtp
 
 import (
-	"crypto/tls"
 	"fmt"
-	"log"
 
 	"github.com/matcornic/hermes/v2"
-	"gopkg.in/gomail.v2"
 )
 
 func AccountConfirmation(email, token string) error {
@@ -27,21 +24,7 @@ func TokenRefresh(email, token string) error {
 	)
 }
 
-func PasswordReset(email, token string) error {
-	return transactional(
-		email,
-		token,
-		"Reset your password",
-		"You requested to reset your password. To reset it, click the link below.",
-	)
-}
-
 func transactional(email, token, header, instructions string) error {
-	if !smtpMasterConfig.smtpSettings.Send {
-		log.Println("Sending is OFF; faked an email send.")
-		return nil
-	}
-
 	link := fmt.Sprintf(
 		// Note: first two args are paths so they end in /
 		// baseUrl/ + confirmUrl/ + "/" + token
@@ -77,20 +60,5 @@ func transactional(email, token, header, instructions string) error {
 		return err
 	}
 
-	m := gomail.NewMessage()
-
-	m.SetHeader("From", smtpMasterConfig.smtpSettings.Email)
-	m.SetHeader("To", email)
-	m.SetHeader("Subject", header)
-	m.SetBody("text/html", emailBody)
-
-	d := gomail.NewDialer(
-		smtpMasterConfig.smtpSettings.Domain,
-		smtpMasterConfig.smtpSettings.Port,
-		smtpMasterConfig.smtpSettings.Email,
-		smtpMasterConfig.smtpSettings.Password,
-	)
-	d.TLSConfig = &tls.Config{ InsecureSkipVerify: true	}
-
-	return d.DialAndSend(m)
+	return sendEmail(email, header, emailBody)
 }
